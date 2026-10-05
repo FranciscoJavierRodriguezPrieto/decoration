@@ -29,13 +29,22 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/model/**', 'src/geometry/**', 'src/rules/**', 'src/store/**', 'src/io/**'],
+      include: [
+        'src/model/**',
+        'src/geometry/**',
+        'src/rules/**',
+        'src/store/**',
+        'src/io/**',
+        'src/viewer3d/**/*.ts',
+      ],
       // Pegamento con DOM/Tauri/React: lo cubren los e2e, no los unitarios.
       exclude: [
         '**/*.test.ts',
         'src/model/index.ts',
         'src/io/fileGateway.ts',
         'src/store/hooks.ts',
+        // Texturas pintadas en un <canvas>: necesitan DOM.
+        'src/viewer3d/materials.ts',
       ],
       thresholds: { lines: 90, functions: 90, branches: 85, statements: 90 },
     },

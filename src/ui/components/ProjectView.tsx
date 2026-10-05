@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { Suspense, lazy, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { areaM2 } from '../../geometry/polygon';
 import type { Item, Project } from '../../model/project';
 import { BASE_VARIANT_ID } from '../../model/project';
@@ -8,6 +8,11 @@ import { useUi } from '../../store/hooks';
 import { projectStore } from '../../store/projectStore';
 import { uiStore } from '../../store/uiStore';
 import { formatNumber, t } from '../i18n';
+
+// El visor 3D (three.js) se carga al abrir la pestaña: el arranque sigue siendo ligero.
+const Viewer3D = lazy(() =>
+  import('../../viewer3d/Viewer3D').then((m) => ({ default: m.Viewer3D })),
+);
 
 const cm = (n: number) => formatNumber(n, 1);
 
@@ -92,7 +97,7 @@ export function ProjectView({ project }: { project: Project }) {
 
       <section className="workspace">
         <nav className="tabs" role="tablist" aria-label={t('tabs.label')}>
-          {(['plano', 'muebles'] as const).map((id) => (
+          {(['plano', 'tres', 'muebles'] as const).map((id) => (
             <button
               key={id}
               type="button"
@@ -112,6 +117,10 @@ export function ProjectView({ project }: { project: Project }) {
         </nav>
         {tab === 'plano' && level ? (
           <PlanEditor project={project} level={level} />
+        ) : tab === 'tres' && level ? (
+          <Suspense fallback={<div className="viewer3d__loading">{t('v3d.loading')}</div>}>
+            <Viewer3D level={level} variantId={project.activeVariantId} items={items} />
+          </Suspense>
         ) : (
           <div className="content">
             <header className="content__head">
