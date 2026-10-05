@@ -6,6 +6,8 @@ import { formatNumber, t, type MessageKey } from '../ui/i18n';
 import { NumberField } from './NumberField';
 
 const WALL_KINDS = ['tabique', 'fachada', 'carga'] as const;
+const OPENING_KINDS = ['puerta', 'ventana', 'balconera', 'hueco'] as const;
+const FIXTURE_KINDS = ['radiador', 'toma_tv', 'enchufe', 'punto_luz', 'columna', 'espejo'] as const;
 const STATUSES = ['tengo', 'candidato', 'descartado'] as const;
 
 export function PropertiesPanel({
@@ -82,6 +84,176 @@ export function PropertiesPanel({
           }}
         >
           {t('props.deleteWall')}
+        </button>
+      </aside>
+    );
+  }
+
+  if (selection?.kind === 'opening') {
+    const o = level.openings.find((x) => x.id === selection.id);
+    const w = o && level.walls.find((x) => x.id === o.wallId);
+    if (!o || !w) return <Help />;
+    const edit = (patch: Parameters<typeof store.updateOpening>[2]) =>
+      store.updateOpening(level.id, o.id, patch);
+    const isDoor = o.kind === 'puerta' || o.kind === 'balconera';
+    return (
+      <aside className="props" aria-label={t('props.opening')}>
+        <h2>{t(`openingKind.${o.kind}` as MessageKey)}</h2>
+        <label className="field">
+          <span>{t('props.kind')}</span>
+          <select
+            value={o.kind}
+            onChange={(e) => edit({ kind: e.target.value as (typeof OPENING_KINDS)[number] })}
+          >
+            {OPENING_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {t(`openingKind.${k}` as MessageKey)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="field-row">
+          <NumberField
+            label={t('props.width')}
+            unit="cm"
+            min={20}
+            value={o.width}
+            onCommit={(n) => edit({ width: n })}
+          />
+          <NumberField
+            label={t('props.offset')}
+            unit="cm"
+            min={0}
+            value={o.offset}
+            onCommit={(n) => edit({ offset: n })}
+          />
+        </div>
+        <div className="field-row">
+          <NumberField
+            label={t('props.h')}
+            unit="cm"
+            min={20}
+            value={o.height}
+            onCommit={(n) => edit({ height: n })}
+          />
+          {o.kind !== 'puerta' && (
+            <NumberField
+              label={t('props.sill')}
+              unit="cm"
+              min={0}
+              value={o.sill ?? 0}
+              onCommit={(n) => edit({ sill: n })}
+            />
+          )}
+        </div>
+        {isDoor && (
+          <div className="field-row">
+            <label className="field">
+              <span>{t('props.hinge')}</span>
+              <select
+                value={o.hinge ?? 'izq'}
+                onChange={(e) => edit({ hinge: e.target.value as 'izq' | 'der' })}
+              >
+                <option value="izq">{t('hinge.izq')}</option>
+                <option value="der">{t('hinge.der')}</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>{t('props.swing')}</span>
+              <select
+                value={o.swing ?? 'dentro'}
+                onChange={(e) =>
+                  edit({ swing: e.target.value as 'dentro' | 'fuera' | 'corredera' })
+                }
+              >
+                <option value="dentro">{t('swing.dentro')}</option>
+                <option value="fuera">{t('swing.fuera')}</option>
+                <option value="corredera">{t('swing.corredera')}</option>
+              </select>
+            </label>
+          </div>
+        )}
+        <p className="props__meta">{t('props.onWall', { len: formatNumber(wallLength(w), 1) })}</p>
+        <p className="props__tip">{t('props.openingTip')}</p>
+        <button
+          type="button"
+          className="danger"
+          onClick={() => {
+            store.deleteOpening(level.id, o.id);
+            uiStore.getState().select(null);
+          }}
+        >
+          {t('props.delete')}
+        </button>
+      </aside>
+    );
+  }
+
+  if (selection?.kind === 'fixture') {
+    const f = level.fixtures.find((x) => x.id === selection.id);
+    if (!f) return <Help />;
+    const edit = (patch: Parameters<typeof store.updateFixture>[2]) =>
+      store.updateFixture(level.id, f.id, patch);
+    return (
+      <aside className="props" aria-label={t('props.fixture')}>
+        <h2>{t(`fixtureKind.${f.kind}` as MessageKey)}</h2>
+        <label className="field">
+          <span>{t('props.kind')}</span>
+          <select
+            value={f.kind}
+            onChange={(e) => edit({ kind: e.target.value as (typeof FIXTURE_KINDS)[number] })}
+          >
+            {FIXTURE_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {t(`fixtureKind.${k}` as MessageKey)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="field-row">
+          <NumberField label="X" unit="cm" value={f.x} onCommit={(n) => edit({ x: n })} />
+          <NumberField label="Y" unit="cm" value={f.y} onCommit={(n) => edit({ y: n })} />
+        </div>
+        <div className="field-row field-row--3">
+          <NumberField
+            label={t('props.w')}
+            unit="cm"
+            min={1}
+            value={f.w}
+            onCommit={(n) => edit({ w: n })}
+          />
+          <NumberField
+            label={t('props.d')}
+            unit="cm"
+            min={1}
+            value={f.d}
+            onCommit={(n) => edit({ d: n })}
+          />
+          <NumberField
+            label={t('props.h')}
+            unit="cm"
+            min={1}
+            value={f.h}
+            onCommit={(n) => edit({ h: n })}
+          />
+        </div>
+        <NumberField
+          label={t('props.z')}
+          unit="cm"
+          min={0}
+          value={f.z ?? 0}
+          onCommit={(n) => edit({ z: n })}
+        />
+        <p className="props__tip">{t('props.fixtureTip')}</p>
+        <button
+          type="button"
+          className="danger"
+          onClick={() => {
+            store.deleteFixture(level.id, f.id);
+            uiStore.getState().select(null);
+          }}
+        >
+          {t('props.delete')}
         </button>
       </aside>
     );
@@ -168,6 +340,7 @@ function Help() {
         <li>{t('help.select')}</li>
         <li>{t('help.vertex')}</li>
         <li>{t('help.wall')}</li>
+        <li>{t('help.openings')}</li>
         <li>{t('help.pan')}</li>
         <li>{t('help.undo')}</li>
       </ul>

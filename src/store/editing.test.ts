@@ -64,6 +64,35 @@ describe('edición de muros', () => {
   });
 });
 
+describe('huecos y fijos', () => {
+  it('añadir, cambiar y borrar una puerta, con deshacer', () => {
+    const id = s().addOpening('L0', 'w_tv', 100, 'puerta');
+    expect(level().openings.find((o) => o.id === id)?.kind).toBe('puerta');
+    s().updateOpening('L0', id, { width: 72, hinge: 'der', swing: 'fuera' });
+    expect(level().openings.find((o) => o.id === id)).toMatchObject({ width: 72, hinge: 'der' });
+    stillValid();
+    s().deleteOpening('L0', id);
+    expect(level().openings.some((o) => o.id === id)).toBe(false);
+    history().undo();
+    expect(level().openings.some((o) => o.id === id)).toBe(true);
+  });
+
+  it('valida los parches de huecos', () => {
+    expect(() => s().updateOpening('L0', 'ventana', { width: -5 })).toThrow();
+    expect(() => s().updateOpening('L0', 'ventana', { id: 'x' } as never)).toThrow();
+  });
+
+  it('añadir, cambiar y borrar un radiador', () => {
+    const id = s().addFixture('L0', 'w_tv', 200, 'radiador');
+    s().updateFixture('L0', id, { w: 100 });
+    expect(level().fixtures.find((f) => f.id === id)?.w).toBe(100);
+    stillValid();
+    expect(() => s().updateFixture('L0', id, { w: 0 })).toThrow();
+    s().deleteFixture('L0', id);
+    expect(level().fixtures.some((f) => f.id === id)).toBe(false);
+  });
+});
+
 describe('muebles en variantes', () => {
   it('mover un mueble propio de la variante lo cambia en sitio', () => {
     s().editItemInVariant('M1', 'moscu', { x: 240 });
@@ -103,6 +132,9 @@ describe('uiStore', () => {
     ui.getState().setTab('muebles');
     ui.getState().setGrid(0);
     expect(ui.getState().grid).toBe(1);
+    ui.getState().flash('Aviso');
+    expect(ui.getState().message).toBe('Aviso');
+    ui.getState().flash(null);
     ui.getState().reset('L1');
     expect(ui.getState()).toMatchObject({ levelId: 'L1', tool: 'select', tab: 'plano' });
   });

@@ -6,6 +6,13 @@
 import type Konva from 'konva';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Circle, Group, Layer, Line, Rect, Shape, Stage, Text } from 'react-konva';
+import {
+  centeredOffset,
+  fixtureOnWall,
+  nearestWall,
+  OPENING_DEFAULTS,
+  type OpeningKind,
+} from '../geometry/openings';
 import { snapPoint, pointAtLength } from '../geometry/snap';
 import { add, dist, roundHalf, scale, sub, type Vec2 } from '../geometry/vec';
 import {
@@ -20,9 +27,9 @@ import {
   wallLength,
   wallQuad,
 } from '../geometry/walls';
-import type { Item, Level, Opening, Wall } from '../model/project';
+import type { Fixture, Item, Level, Opening, Wall } from '../model/project';
 import { projectStore } from '../store/projectStore';
-import { uiStore } from '../store/uiStore';
+import { uiStore, type Tool } from '../store/uiStore';
 import { useUi } from '../store/hooks';
 import { formatNumber } from '../ui/i18n';
 import { FONT, PLAN } from './theme';
@@ -45,6 +52,24 @@ interface Preview {
   to: Vec2;
 }
 
+/** Herramientas que colocan algo sobre un muro. */
+const PLACING: Partial<Record<Tool, OpeningKind | 'radiador'>> = {
+  door: 'puerta',
+  window: 'ventana',
+  radiator: 'radiador',
+};
+
+interface Hover {
+  wallId: string;
+  t: number;
+}
+
+interface OpeningPreview {
+  id: string;
+  wallId: string;
+  offset: number;
+}
+
 interface WallDraft {
   start: Vec2 | null;
   cursor: Vec2 | null;
@@ -58,15 +83,25 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
   const [view, setView] = useState<View>({ scale: 1, x: 0, y: 0 });
   const [preview, setPreview] = useState<Preview | null>(null);
   const [draft, setDraft] = useState<WallDraft>({ start: null, cursor: null, typed: '' });
+  const [hover, setHover] = useState<Hover | null>(null);
+  const [openingPreview, setOpeningPreview] = useState<OpeningPreview | null>(null);
   const tool = useUi((s) => s.tool);
   const selection = useUi((s) => s.selection);
   const grid = useUi((s) => s.grid);
 
   // Nivel que se dibuja: el real o, mientras se arrastra una esquina, la vista previa.
-  const shown = useMemo(
-    () => (preview ? moveVertex(level, preview.from, preview.to) : level),
-    [level, preview],
-  );
+  const shown = useMemo(() => {
+    const base = preview ? moveVertex(level, preview.from, preview.to) : level;
+    if (!openingPreview) return base;
+    return {
+      ...base,
+      openings: base.openings.map((o) =>
+        o.id === openingPreview.id
+          ? { ...o, wallId: openingPreview.wallId, offset: openingPreview.offset }
+          : o,
+      ),
+    };
+  }, [level, preview, openingPreview]);
   const vertices = useMemo(() => levelVertices(level), [level]);
   const roomCenter = useMemo(
     () => centroid(level.rooms.flatMap((r) => r.polygon).concat(vertices)),
@@ -102,9 +137,10 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
     return () => window.removeEventListener('planocasa:fit', onFit);
   }, [fit]);
 
-  // Al cambiar de herramienta se cancela el muro en curso.
+  // Al cambiar de herramienta se cancela el muro en curso y la previsualización.
   useEffect(() => {
     setDraft({ start: null, cursor: null, typed: '' });
+    setHover(null);
   }, [tool, level.id]);
 
   /** Puntero en coordenadas del plano (cm). */
@@ -165,7 +201,15 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
     setView((v) => zoomAt(v, p, e.evt.deltaY > 0 ? 1 / 1.12 : 1.12));
   };
 
+  const placing = PLACING[tool];
+
   const onMouseMove = () => {
+    if (placing) {
+      const p = pointer();
+      const hit = p ? nearestWall(level, p, Math.max(25, 30 / view.scale)) : null;
+      setHover(hit ? { wallId: hit.wall.id, t: hit.t } : null);
+      return;
+    }
     if (tool !== 'wall') return;
     const p = pointer();
     if (!p) return;
@@ -181,6 +225,26 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
   };
 
   const onStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (placing) {
+      if (!hover) return;
+      const store = projectStore.getState();
+      try {
+        // Tras colocar, se vuelve a Seleccionar con lo nuevo seleccionado.
+        const ui = uiStore.getState();
+        if (placing === 'radiador') {
+          const id = store.addFixture(level.id, hover.wallId, hover.t, 'radiador');
+          ui.setTool('select');
+          ui.select({ kind: 'fixture', levelId: level.id, id });
+        } else {
+          const id = store.addOpening(level.id, hover.wallId, hover.t, placing);
+          ui.setTool('select');
+          ui.select({ kind: 'opening', levelId: level.id, id });
+        }
+      } catch (err) {
+        uiStore.getState().flash(err instanceof Error ? err.message : String(err));
+      }
+      return;
+    }
     if (tool === 'wall') {
       if (e.evt.button === 2) {
         setDraft({ start: null, cursor: null, typed: '' });
@@ -252,6 +316,43 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
       }
     }
     e.target.position({ x: item.x, y: item.y });
+  };
+
+  const dragOpening = (id: string) => (e: Konva.KonvaEventObject<DragEvent>) => {
+    const p = { x: e.target.x(), y: e.target.y() };
+    const o = level.openings.find((x) => x.id === id);
+    const hit = o ? nearestWall(level, p, 80) : null;
+    if (!o || !hit) return;
+    const offset = centeredOffset(hit.wall, hit.t, o.width);
+    const mid = offset + o.width / 2;
+    const d = sub(hit.wall.b, hit.wall.a);
+    const len = Math.hypot(d.x, d.y);
+    e.target.position(add(hit.wall.a, scale(d, mid / len)));
+    setOpeningPreview({ id, wallId: hit.wall.id, offset });
+  };
+
+  const dropOpening = (id: string) => () => {
+    const pv = openingPreview;
+    setOpeningPreview(null);
+    if (!pv || pv.id !== id) return;
+    try {
+      projectStore.getState().updateOpening(level.id, id, { wallId: pv.wallId, offset: pv.offset });
+    } catch (err) {
+      uiStore.getState().flash(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const dropFixture = (f: Fixture) => (e: Konva.KonvaEventObject<DragEvent>) => {
+    const x = roundHalf(e.target.x() + f.w / 2);
+    const y = roundHalf(e.target.y() + f.d / 2);
+    if (x !== f.x || y !== f.y) {
+      try {
+        projectStore.getState().updateFixture(level.id, f.id, { x, y });
+      } catch {
+        /* sin cambios */
+      }
+    }
+    e.target.position({ x: f.x - f.w / 2, y: f.y - f.d / 2 });
   };
 
   const px = (n: number) => n / view.scale; // n píxeles de pantalla en cm
@@ -372,21 +473,40 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
                   opening={o}
                   side={interiorSide(w, roomCenter)}
                   px={px}
+                  selected={selection?.kind === 'opening' && selection.id === o.id}
+                  listening={selectable}
+                  onSelect={() =>
+                    uiStore.getState().select({ kind: 'opening', levelId: level.id, id: o.id })
+                  }
                 />
               ) : null;
             })}
-            {shown.fixtures.map((f) => (
-              <Rect
-                key={f.id}
-                x={f.x - f.w / 2}
-                y={f.y - f.d / 2}
-                width={f.w}
-                height={f.d}
-                fill={PLAN.fixture[f.kind]}
-                opacity={0.85}
-                listening={false}
-              />
-            ))}
+            {shown.fixtures.map((f) => {
+              const sel = selection?.kind === 'fixture' && selection.id === f.id;
+              return (
+                <Rect
+                  key={f.id}
+                  x={f.x - f.w / 2}
+                  y={f.y - f.d / 2}
+                  width={f.w}
+                  height={f.d}
+                  fill={PLAN.fixture[f.kind]}
+                  opacity={0.9}
+                  stroke={sel ? PLAN.selected : undefined}
+                  strokeWidth={px(2)}
+                  hitStrokeWidth={px(10)}
+                  listening={selectable}
+                  draggable={selectable && sel}
+                  onClick={(e) => {
+                    e.cancelBubble = true;
+                    uiStore.getState().select({ kind: 'fixture', levelId: level.id, id: f.id });
+                  }}
+                  onDragEnd={dropFixture(f)}
+                  onMouseEnter={(e) => setCursor(e, sel ? 'move' : 'pointer')}
+                  onMouseLeave={(e) => setCursor(e, '')}
+                />
+              );
+            })}
           </Layer>
 
           {/* Cotas, asas y borrador */}
@@ -423,6 +543,34 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
                   />
                 ) : null,
               )}
+            {selectable &&
+              selection?.kind === 'opening' &&
+              (() => {
+                const o = shown.openings.find((x) => x.id === selection.id);
+                const w = o && shown.walls.find((x) => x.id === o.wallId);
+                if (!o || !w) return null;
+                const [p0, p1] = openingSegment(w, o);
+                const c = scale(add(p0, p1), 0.5);
+                return (
+                  <Circle
+                    key={`h-${o.id}`}
+                    x={c.x}
+                    y={c.y}
+                    radius={px(8)}
+                    fill={PLAN.handle}
+                    stroke={PLAN.selected}
+                    strokeWidth={px(2)}
+                    draggable
+                    onDragMove={dragOpening(o.id)}
+                    onDragEnd={dropOpening(o.id)}
+                    onMouseEnter={(e) => setCursor(e, 'ew-resize')}
+                    onMouseLeave={(e) => setCursor(e, '')}
+                  />
+                );
+              })()}
+            {placing && hover && (
+              <PlacingGhost level={level} hover={hover} kind={placing} px={px} />
+            )}
             {tool === 'wall' && <WallDraftShape draft={draft} px={px} />}
           </Layer>
         </Stage>
@@ -467,11 +615,17 @@ function OpeningShape({
   opening,
   side,
   px,
+  selected = false,
+  listening = false,
+  onSelect,
 }: {
   wall: Wall;
   opening: Opening;
   side: 1 | -1;
   px: (n: number) => number;
+  selected?: boolean;
+  listening?: boolean;
+  onSelect?: () => void;
 }) {
   const quad = openingQuad(wall, opening);
   const [p0, p1] = openingSegment(wall, opening);
@@ -479,8 +633,21 @@ function OpeningShape({
   const swing = isWindow || opening.kind === 'hueco' ? null : doorSwing(wall, opening, side);
   const half = scale(sub(quad[0] ?? p0, p0), 0.45);
   return (
-    <Group listening={false}>
-      <Line points={flat(quad)} closed fill={PLAN.opening} />
+    <Group listening={listening}>
+      <Line
+        points={flat(quad)}
+        closed
+        fill={PLAN.opening}
+        stroke={selected ? PLAN.selected : undefined}
+        strokeWidth={px(2)}
+        hitStrokeWidth={px(8)}
+        onClick={(e) => {
+          e.cancelBubble = true;
+          onSelect?.();
+        }}
+        onMouseEnter={(e) => listening && setCursor(e, 'pointer')}
+        onMouseLeave={(e) => setCursor(e, '')}
+      />
       {isWindow && (
         <>
           <Line
@@ -690,5 +857,47 @@ function WallDraftShape({ draft, px }: { draft: WallDraft; px: (n: number) => nu
         fill={PLAN.draft}
       />
     </Group>
+  );
+}
+
+function PlacingGhost({
+  level,
+  hover,
+  kind,
+  px,
+}: {
+  level: Level;
+  hover: { wallId: string; t: number };
+  kind: OpeningKind | 'radiador';
+  px: (n: number) => number;
+}) {
+  const wall = level.walls.find((w) => w.id === hover.wallId);
+  if (!wall) return null;
+  if (kind === 'radiador') {
+    const f = fixtureOnWall(level, wall, hover.t, 'radiador');
+    return (
+      <Rect
+        x={f.x - f.w / 2}
+        y={f.y - f.d / 2}
+        width={f.w}
+        height={f.d}
+        fill={PLAN.draft}
+        opacity={0.55}
+        listening={false}
+      />
+    );
+  }
+  const width = Math.min(OPENING_DEFAULTS[kind].width, wallLength(wall));
+  const quad = openingQuad(wall, { offset: centeredOffset(wall, hover.t, width), width });
+  return (
+    <Line
+      points={flat(quad)}
+      closed
+      fill={PLAN.draft}
+      opacity={0.55}
+      stroke={PLAN.draft}
+      strokeWidth={px(1)}
+      listening={false}
+    />
   );
 }

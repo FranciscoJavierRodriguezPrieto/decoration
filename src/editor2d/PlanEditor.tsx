@@ -6,19 +6,46 @@ import { resolveVariantItems } from '../model/variants';
 import { useUi } from '../store/hooks';
 import { projectStore } from '../store/projectStore';
 import { uiStore, type Tool } from '../store/uiStore';
-import { t } from '../ui/i18n';
+import { t, type MessageKey } from '../ui/i18n';
 import { PlanCanvas } from './PlanCanvas';
 import { PropertiesPanel } from './PropertiesPanel';
 
-const TOOLS: { id: Tool; key: string; label: 'tool.select' | 'tool.wall' }[] = [
+const TOOLS: { id: Tool; key: string; label: MessageKey }[] = [
   { id: 'select', key: 'V', label: 'tool.select' },
   { id: 'wall', key: 'W', label: 'tool.wall' },
+  { id: 'door', key: 'D', label: 'tool.door' },
+  { id: 'window', key: 'N', label: 'tool.window' },
+  { id: 'radiator', key: 'F', label: 'tool.radiator' },
 ];
+
+const TOOL_KEYS: Record<string, Tool> = {
+  v: 'select',
+  w: 'wall',
+  d: 'door',
+  n: 'window',
+  f: 'radiator',
+};
+
+const HINTS: Partial<Record<Tool, MessageKey>> = {
+  wall: 'tool.wallHint',
+  door: 'tool.placeHint',
+  window: 'tool.placeHint',
+  radiator: 'tool.placeHint',
+};
 
 export function PlanEditor({ project, level }: { project: Project; level: Level }) {
   const tool = useUi((s) => s.tool);
   const grid = useUi((s) => s.grid);
   const selection = useUi((s) => s.selection);
+  const message = useUi((s) => s.message);
+  const hint = HINTS[tool];
+
+  // Los avisos se borran solos a los 3 s.
+  useEffect(() => {
+    if (!message) return;
+    const id = window.setTimeout(() => uiStore.getState().flash(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [message]);
   const variantId = project.activeVariantId;
 
   const items = useMemo(() => resolveVariantItems(project, variantId), [project, variantId]);
@@ -37,12 +64,18 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
       const ui = uiStore.getState();
       const sel = ui.selection;
       const k = e.key.toLowerCase();
-      if (k === 'v') ui.setTool('select');
-      else if (k === 'w') ui.setTool('wall');
-      else if (k === 'f') window.dispatchEvent(new Event('planocasa:fit'));
-      else if (k === 'escape') ui.select(null);
-      else if ((e.key === 'Delete' || e.key === 'Backspace') && sel?.kind === 'wall') {
-        projectStore.getState().deleteWall(sel.levelId, sel.id);
+      const toolKey = TOOL_KEYS[k];
+      if (toolKey) ui.setTool(toolKey);
+      else if (k === '0') window.dispatchEvent(new Event('planocasa:fit'));
+      else if (k === 'escape') {
+        if (ui.tool !== 'select') ui.setTool('select');
+        else ui.select(null);
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && sel) {
+        const store = projectStore.getState();
+        if (sel.kind === 'wall') store.deleteWall(sel.levelId, sel.id);
+        else if (sel.kind === 'opening') store.deleteOpening(sel.levelId, sel.id);
+        else if (sel.kind === 'fixture') store.deleteFixture(sel.levelId, sel.id);
+        else return;
         ui.select(null);
       } else if (k === 'r' && sel?.kind === 'item') {
         const it = items.find((i) => i.id === sel.id);
@@ -88,9 +121,9 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
           type="button"
           className="tool"
           onClick={() => window.dispatchEvent(new Event('planocasa:fit'))}
-          title={`${t('tool.fit')} (F)`}
+          title={`${t('tool.fit')} (0)`}
         >
-          {t('tool.fit')} <kbd>F</kbd>
+          {t('tool.fit')} <kbd>0</kbd>
         </button>
         <label className="plan__grid">
           {t('tool.grid')}
@@ -102,8 +135,13 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
             ))}
           </select>
         </label>
-        {tool === 'wall' && <span className="plan__hint">{t('tool.wallHint')}</span>}
+        {hint && <span className="plan__hint">{t(hint)}</span>}
       </div>
+      {message && (
+        <div className="plan__toast" role="alert">
+          {message}
+        </div>
+      )}
       <div className="plan__body">
         <PlanCanvas
           level={level}
