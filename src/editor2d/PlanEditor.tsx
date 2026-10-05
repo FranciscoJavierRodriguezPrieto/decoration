@@ -11,6 +11,7 @@ import { uiStore, type Tool } from '../store/uiStore';
 import { t, type MessageKey } from '../ui/i18n';
 import { PlanCanvas } from './PlanCanvas';
 import { PropertiesPanel } from './PropertiesPanel';
+import { countBySeverity, evaluateRules } from '../rules';
 
 const TOOLS: { id: Tool; key: string; label: MessageKey }[] = [
   { id: 'select', key: 'V', label: 'tool.select' },
@@ -41,6 +42,9 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
   const selection = useUi((s) => s.selection);
   const message = useUi((s) => s.message);
   const adding = useUi((s) => s.adding);
+  const showWarnings = useUi((s) => s.showWarnings);
+  const includeSeasonal = useUi((s) => s.includeSeasonal);
+  const checkExtended = useUi((s) => s.checkExtended);
   const hint = HINTS[tool];
 
   // Los avisos se borran solos a los 3 s.
@@ -57,6 +61,13 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
     const own = new Set(project.variants.find((v) => v.id === variantId)?.items.map((i) => i.id));
     return new Set(items.filter((i) => !own.has(i.id)).map((i) => i.id));
   }, [project, variantId, items]);
+
+  // Motor de reglas: se recalcula al cambiar el nivel, los muebles o las opciones.
+  const warnings = useMemo(
+    () => evaluateRules(level, items, { includeSeasonal, checkExtended }),
+    [level, items, includeSeasonal, checkExtended],
+  );
+  const counts = countBySeverity(warnings);
 
   const fallbackCenter = useMemo(() => {
     const b = levelBounds(level);
@@ -162,6 +173,15 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
             ))}
           </select>
         </label>
+        <button
+          type="button"
+          className={`tool warnings-badge${counts.error ? ' warnings-badge--error' : counts.aviso ? ' warnings-badge--aviso' : ''}`}
+          aria-pressed={showWarnings}
+          onClick={() => uiStore.getState().setRuleFlags({ showWarnings: !showWarnings })}
+          title={t('warnings.show')}
+        >
+          {t('warnings.count', { e: counts.error, a: counts.aviso })}
+        </button>
         {hint && <span className="plan__hint">{t(hint)}</span>}
       </div>
       {message && (
@@ -176,6 +196,7 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
           items={items}
           inherited={inherited}
           fitKey={`${project.id}/${level.id}`}
+          warnings={showWarnings ? warnings : []}
         />
         {adding ? (
           <AddItemPanel variantId={variantId} fallbackCenter={fallbackCenter} />
@@ -186,6 +207,7 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
             inherited={inherited}
             variantId={variantId}
             selection={selection}
+            warnings={warnings}
           />
         )}
       </div>

@@ -32,3 +32,10 @@ export const PLAN = {
 } as const;
 
 export const FONT = "'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
+
+/** Colores de la capa de avisos por gravedad. */
+export const WARN = {
+  error: '#c0392b',
+  aviso: '#d48a1f',
+  info: '#2e5559',
+} as const;
