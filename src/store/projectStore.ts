@@ -12,10 +12,16 @@ import { temporal, type TemporalState } from 'zundo';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
 import type { Vec2 } from '../geometry/vec';
+import * as openings from '../geometry/openings';
 import * as walls from '../geometry/walls';
 import type { FileInfo } from '../io/fileGateway';
 import type { Level, Project, Wall } from '../model/project';
-import { Item as ItemSchema, Wall as WallSchema } from '../model/schemas';
+import {
+  Fixture as FixtureSchema,
+  Item as ItemSchema,
+  Opening as OpeningSchema,
+  Wall as WallSchema,
+} from '../model/schemas';
 import { resolveVariantItems } from '../model/variants';
 
 export const HISTORY_LIMIT = 200;
@@ -43,6 +49,14 @@ export const WallPatch = WallSchema.innerType()
   .partial()
   .strict();
 export type WallPatch = z.infer<typeof WallPatch>;
+
+/** Campos editables de un hueco (todo salvo el id). */
+export const OpeningPatch = OpeningSchema.omit({ id: true }).partial().strict();
+export type OpeningPatch = z.infer<typeof OpeningPatch>;
+
+/** Campos editables de un elemento fijo (todo salvo el id). */
+export const FixturePatch = FixtureSchema.omit({ id: true }).partial().strict();
+export type FixturePatch = z.infer<typeof FixturePatch>;
 
 export interface ProjectState {
   project: Project | null;
@@ -75,6 +89,21 @@ export interface ProjectState {
   /** Crea un muro y devuelve su id. */
   addWall(levelId: string, a: Vec2, b: Vec2, opts?: Pick<Wall, 'thickness' | 'kind'>): string;
   deleteWall(levelId: string, wallId: string): void;
+
+  /** Crea un hueco centrado a `t` cm del inicio del muro. Devuelve su id. */
+  addOpening(
+    levelId: string,
+    wallId: string,
+    t: number,
+    kind: openings.OpeningKind,
+    overrides?: OpeningPatch,
+  ): string;
+  updateOpening(levelId: string, id: string, patch: OpeningPatch): void;
+  deleteOpening(levelId: string, id: string): void;
+  /** Crea un fijo pegado al muro, centrado a `t` cm de su inicio. Devuelve su id. */
+  addFixture(levelId: string, wallId: string, t: number, kind: openings.FixtureKind): string;
+  updateFixture(levelId: string, id: string, patch: FixturePatch): void;
+  deleteFixture(levelId: string, id: string): void;
 }
 
 type HistoryState = Pick<ProjectState, 'project'>;
@@ -232,6 +261,45 @@ export function createProjectStore(
 
           deleteWall(levelId, wallId) {
             editLevel(levelId, (l) => walls.deleteWall(l, wallId));
+          },
+
+          addOpening(levelId, wallId, t, kind, overrides = {}) {
+            const valid = OpeningPatch.parse(overrides);
+            let created = '';
+            editLevel(levelId, (l) => {
+              const r = openings.addOpening(l, wallId, t, kind, valid);
+              created = r.id;
+              return r.level;
+            });
+            return created;
+          },
+
+          updateOpening(levelId, id, patch) {
+            const valid = OpeningPatch.parse(patch);
+            editLevel(levelId, (l) => openings.updateOpening(l, id, valid));
+          },
+
+          deleteOpening(levelId, id) {
+            editLevel(levelId, (l) => openings.deleteOpening(l, id));
+          },
+
+          addFixture(levelId, wallId, t, kind) {
+            let created = '';
+            editLevel(levelId, (l) => {
+              const r = openings.addFixture(l, wallId, t, kind);
+              created = r.id;
+              return r.level;
+            });
+            return created;
+          },
+
+          updateFixture(levelId, id, patch) {
+            const valid = FixturePatch.parse(patch);
+            editLevel(levelId, (l) => openings.updateFixture(l, id, valid));
+          },
+
+          deleteFixture(levelId, id) {
+            editLevel(levelId, (l) => openings.deleteFixture(l, id));
           },
         };
       }),

@@ -2,7 +2,7 @@
 
 App de escritorio **100 % local** para levantar el plano de una vivienda, amueblarla con muebles reales y comparar distribuciones en 2D y 3D. Sin nube, sin cuentas, sin telemetría.
 
-> Estado: **fase 1 en curso**. Plano 2D a escala con edición de muros (arrastrar esquinas, longitudes, grosor, añadir y borrar), puertas y ventanas dibujadas, y muebles que se mueven y giran por distribución. Pendiente de la fase 1: crear huecos y fijos desde la UI, cotas editables e importar PDF/imagen como fondo calibrado. El 3D llega en la fase 3 (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
+> Estado: **fase 1 en curso**. Plano 2D a escala con edición de muros (arrastrar esquinas, longitudes, grosor, añadir y borrar), puertas y ventanas dibujadas, y muebles que se mueven y giran por distribución. Puertas, ventanas y radiadores se crean, mueven y editan desde el plano (D, N, F). Pendiente de la fase 1: cotas editables e importar PDF/imagen como fondo calibrado. El 3D llega en la fase 3 (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
 
 ## Lenguajes y piezas
 

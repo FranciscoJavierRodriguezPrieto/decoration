@@ -722,3 +722,25 @@ button.danger {
   border-color: var(--accent);
   margin-top: auto;
 }
+
+.plan__toast {
+  position: absolute;
+  left: 50%;
+  top: 112px;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 8px 14px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+}
+.plan {
+  position: relative;
+}
+.plan-canvas--door,
+.plan-canvas--window,
+.plan-canvas--radiator {
+  cursor: copy;
+}
