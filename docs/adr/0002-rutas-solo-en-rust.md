@@ -13,7 +13,9 @@ ESPECIFICACION §11 pide capacidades `fs` limitadas a las rutas elegidas por el 
 - Rust guarda la ruta elegida en un estado interno (`CurrentFile`) y al front solo le devuelve el **nombre** del archivo.
 - Comandos expuestos: `open_project`, `save_project`, `save_project_as`, `current_file`. Ninguno acepta una ruta como argumento.
 - Los comandos se declaran en `build.rs` (`AppManifest`) y la capacidad `default.json` los permite uno a uno. El front no tiene `fs`, `dialog`, `http` ni `shell`.
-- CSP: `default-src 'self'`, `connect-src` solo IPC de Tauri. Sin red. `freezePrototype` activado.
+- CSP: `default-src 'self'`, `connect-src` solo IPC de Tauri. Sin red.
+- En desarrollo (`devCsp`) se permite además `'unsafe-inline'` en `script-src` (preámbulo de React Refresh) y `ws://localhost:1420` (HMR de Vite). En producción no.
+- `freezePrototype` **desactivado**: congela `Object.prototype` y una dependencia del front reasigna `toString`, lo que dejaba la ventana en blanco (fix 2026-10-05). Lo vigila `tests/tauriConfig.test.ts`.
 
 ## Alternativa
 
