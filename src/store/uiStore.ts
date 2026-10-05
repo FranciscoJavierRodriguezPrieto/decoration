@@ -26,6 +26,10 @@ export interface UiState {
   adding: boolean;
   /** Centro de la vista del plano en cm (donde aparecen los muebles nuevos). */
   viewCenter: { x: number; y: number } | null;
+  /** Avisos del motor de reglas: si se dibujan y con qué opciones (reglas 8 y 9). */
+  showWarnings: boolean;
+  includeSeasonal: boolean;
+  checkExtended: boolean;
 
   setLevel(levelId: string | null): void;
   select(selection: Selection): void;
@@ -36,6 +40,9 @@ export interface UiState {
   flash(message: string | null): void;
   setAdding(adding: boolean): void;
   setViewCenter(c: { x: number; y: number } | null): void;
+  setRuleFlags(
+    flags: Partial<Pick<UiState, 'showWarnings' | 'includeSeasonal' | 'checkExtended'>>,
+  ): void;
   /** Vuelve al estado inicial (al abrir o cerrar un proyecto). */
   reset(levelId?: string | null): void;
 }
@@ -50,6 +57,9 @@ export function createUiStore() {
     message: null,
     adding: false,
     viewCenter: null,
+    showWarnings: true,
+    includeSeasonal: false,
+    checkExtended: true,
 
     setLevel: (levelId) => set({ levelId, selection: null }),
     select: (selection) => set(selection ? { selection, adding: false } : { selection }),
@@ -59,6 +69,7 @@ export function createUiStore() {
     flash: (message) => set({ message }),
     setAdding: (adding) => set(adding ? { adding, selection: null, tool: 'select' } : { adding }),
     setViewCenter: (viewCenter) => set({ viewCenter }),
+    setRuleFlags: (flags) => set(flags),
     reset: (levelId = null) =>
       set({ levelId, selection: null, tool: 'select', tab: 'plano', adding: false }),
   }));

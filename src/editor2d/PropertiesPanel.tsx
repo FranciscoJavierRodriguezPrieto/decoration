@@ -4,6 +4,8 @@ import { projectStore } from '../store/projectStore';
 import { uiStore, type Selection } from '../store/uiStore';
 import { formatNumber, t, type MessageKey } from '../ui/i18n';
 import { NumberField } from './NumberField';
+import type { RuleWarning } from '../rules';
+import { WarningsList } from './WarningsList';
 
 const WALL_KINDS = ['tabique', 'fachada', 'carga'] as const;
 const OPENING_KINDS = ['puerta', 'ventana', 'balconera', 'hueco'] as const;
@@ -16,18 +18,27 @@ export function PropertiesPanel({
   inherited,
   variantId,
   selection,
+  warnings = [],
 }: {
   level: Level;
   items: Item[];
   inherited: ReadonlySet<string>;
   variantId: string;
   selection: Selection;
+  warnings?: readonly RuleWarning[];
 }) {
   const store = projectStore.getState();
+  const itemIds = new Set(items.map((i) => i.id));
+  const help = (
+    <aside className="props props--help">
+      <WarningsList warnings={warnings} level={level} variantId={variantId} itemIds={itemIds} />
+      <Help />
+    </aside>
+  );
 
   if (selection?.kind === 'wall') {
     const w = level.walls.find((x) => x.id === selection.id);
-    if (!w) return <Help />;
+    if (!w) return help;
     const openings = level.openings.filter((o) => o.wallId === w.id).length;
     return (
       <aside className="props" aria-label={t('props.wall')}>
@@ -92,7 +103,7 @@ export function PropertiesPanel({
   if (selection?.kind === 'opening') {
     const o = level.openings.find((x) => x.id === selection.id);
     const w = o && level.walls.find((x) => x.id === o.wallId);
-    if (!o || !w) return <Help />;
+    if (!o || !w) return help;
     const edit = (patch: Parameters<typeof store.updateOpening>[2]) =>
       store.updateOpening(level.id, o.id, patch);
     const isDoor = o.kind === 'puerta' || o.kind === 'balconera';
@@ -191,7 +202,7 @@ export function PropertiesPanel({
 
   if (selection?.kind === 'fixture') {
     const f = level.fixtures.find((x) => x.id === selection.id);
-    if (!f) return <Help />;
+    if (!f) return help;
     const edit = (patch: Parameters<typeof store.updateFixture>[2]) =>
       store.updateFixture(level.id, f.id, patch);
     return (
@@ -261,7 +272,7 @@ export function PropertiesPanel({
 
   if (selection?.kind === 'item') {
     const it = items.find((x) => x.id === selection.id);
-    if (!it) return <Help />;
+    if (!it) return help;
     const edit = (patch: Parameters<typeof store.editItemInVariant>[2]) =>
       store.editItemInVariant(variantId, it.id, patch);
     const rot = (delta: number) => edit({ rotation: (((it.rotation + delta) % 360) + 360) % 360 });
@@ -324,6 +335,13 @@ export function PropertiesPanel({
             ))}
           </select>
         </label>
+        <WarningsList
+          compact
+          warnings={warnings.filter((w) => w.objects.includes(it.id))}
+          level={level}
+          variantId={variantId}
+          itemIds={itemIds}
+        />
         <p className="props__tip">{t('props.itemTip')}</p>
         <div className="field-row props__actions">
           <button
@@ -355,12 +373,12 @@ export function PropertiesPanel({
     );
   }
 
-  return <Help />;
+  return help;
 }
 
 function Help() {
   return (
-    <aside className="props props--help">
+    <div className="help">
       <h2>{t('props.helpTitle')}</h2>
       <ul>
         <li>{t('help.select')}</li>
@@ -371,6 +389,6 @@ function Help() {
         <li>{t('help.pan')}</li>
         <li>{t('help.undo')}</li>
       </ul>
-    </aside>
+    </div>
   );
 }

@@ -178,6 +178,16 @@ Reglas mínimas para la fase 2:
 8. **Huella extendida:** las reglas 1–3 se evalúan también con chaises, asientos deslizantes y camas abatibles **extendidos**, con un aviso distinto ("al sacar los asientos…").
 9. **Elementos de temporada:** las reglas se pueden evaluar con o sin ellos.
 
+**Cómo está implementado (fase 2, `src/rules/`):**
+
+- *Colisiones:* SAT entre huellas convexas con 1 cm de tolerancia; las sillas pueden meterse bajo la mesa y los objetos solo chocan si coinciden en altura (la TV sobre su mueble no choca). Con muros se tolera hasta el eje: los muebles se apoyan en el paramento y los planos dibujados a mano no siempre separan eje y cara.
+- *Paso libre:* rejilla de 5 cm por estancia, holgura exacta a muros (sin los huecos de paso), radiadores, columnas y muebles por debajo de 120 cm; camino más ancho entre cada par de puertas, balconeras y huecos de paso de la estancia. Solo se avisa si el estrechamiento lo causan los muebles (se compara con la estancia vacía) y no se mide a menos de 45 cm de cada puerta. Las ventanas no son destino de una ruta: se tratan en la regla 5.
+- *Puertas:* si la hoja toca un mueble hasta 10 cm, aviso ("no abre del todo"); más, error. Los armarios abatibles piden hoja + 10 cm (mejor 90), los de correderas 60 (mejor 70) y los electrodomésticos 90 (mejor 110).
+- *TV:* el asiento principal es el sofá que mejor mira a la TV. Menos de 1,2 × diagonal es aviso; entre 1,2 y 1,5, y más de 2,5, son notas informativas.
+- *Sofá ↔ mesa de centro:* menos de 30 cm es aviso y menos de 40, nota.
+- *Temporada:* desactivada por defecto (casilla en el panel de avisos).
+- *Aceptación:* `tests/rules.salon.test.ts` fija los avisos de las 8 distribuciones del salón.
+
 ---
 
 ## 8. Catálogo de productos

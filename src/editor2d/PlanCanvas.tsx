@@ -32,8 +32,10 @@ import { projectStore } from '../store/projectStore';
 import { uiStore, type Tool } from '../store/uiStore';
 import { useUi } from '../store/hooks';
 import { formatNumber } from '../ui/i18n';
-import { FONT, PLAN } from './theme';
+import { FONT, PLAN, WARN } from './theme';
 import { fitView, zoomAt, type View } from './viewport';
+import type { RuleWarning } from '../rules';
+import { extendedFootprint, openingSide } from '../geometry/footprint';
 
 const flat = (pts: readonly Vec2[]): number[] => pts.flatMap((p) => [p.x, p.y]);
 
@@ -45,6 +47,8 @@ interface Props {
   inherited: ReadonlySet<string>;
   /** Cambia cuando hay que reencajar la vista (otro nivel u otro proyecto). */
   fitKey: string;
+  /** Avisos del motor de reglas a resaltar (capa Avisos, ESPECIFICACION §4.1). */
+  warnings?: readonly RuleWarning[];
 }
 
 interface Preview {
@@ -76,7 +80,7 @@ interface WallDraft {
   typed: string;
 }
 
-export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props) {
+export function PlanCanvas({ level, variantId, items, inherited, fitKey, warnings = [] }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -480,7 +484,7 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
                   key={o.id}
                   wall={w}
                   opening={o}
-                  side={interiorSide(w, roomCenter)}
+                  side={openingSide(level, w, o)}
                   px={px}
                   selected={selection?.kind === 'opening' && selection.id === o.id}
                   listening={selectable}
@@ -516,6 +520,26 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
                 />
               );
             })}
+          </Layer>
+
+          {/* Avisos: zonas en rojo (error) o ámbar (aviso) */}
+          <Layer listening={false}>
+            {warnings
+              .filter((w) => w.severity !== 'info')
+              .flatMap((w) =>
+                w.areas.map((a, i) => (
+                  <Line
+                    key={`${w.key}:${i}`}
+                    points={flat(a)}
+                    closed={a.length > 2}
+                    fill={a.length > 2 ? WARN[w.severity] : undefined}
+                    opacity={a.length > 2 ? 0.28 : 0.9}
+                    stroke={WARN[w.severity]}
+                    strokeWidth={px(a.length > 2 ? 1.5 : 2)}
+                    dash={w.extended ? [px(5), px(4)] : undefined}
+                  />
+                )),
+              )}
           </Layer>
 
           {/* Cotas, asas y borrador */}
@@ -765,7 +789,8 @@ function ItemShape({
   const color = item.color ?? '#d9d1c1';
   const isRug = item.category === 'alfombra';
   const band = Math.min(14, d * 0.22);
-  const ext = item.extended && 'w' in item.extended ? item.extended : null;
+  // Huella extendida en coordenadas locales del grupo (ya girado).
+  const ext = extendedFootprint({ ...item, x: 0, y: 0, rotation: 0 });
   const stroke = selected ? PLAN.selected : PLAN.itemStroke;
   return (
     <Group
@@ -780,11 +805,9 @@ function ItemShape({
       onMouseLeave={(e) => setCursor(e, '')}
     >
       {ext && (
-        <Rect
-          x={-ext.w / 2}
-          y={-d / 2}
-          width={ext.w}
-          height={ext.d}
+        <Line
+          points={flat(ext)}
+          closed
           stroke={stroke}
           strokeWidth={px(1)}
           dash={[px(5), px(4)]}
