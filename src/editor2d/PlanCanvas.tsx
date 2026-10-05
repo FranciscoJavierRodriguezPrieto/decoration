@@ -522,28 +522,28 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
             })}
           </Layer>
 
-          {/* Avisos: zonas en rojo (error) o ámbar (aviso) */}
-          <Layer listening={false}>
-            {warnings
-              .filter((w) => w.severity !== 'info')
-              .flatMap((w) =>
-                w.areas.map((a, i) => (
-                  <Line
-                    key={`${w.key}:${i}`}
-                    points={flat(a)}
-                    closed={a.length > 2}
-                    fill={a.length > 2 ? WARN[w.severity] : undefined}
-                    opacity={a.length > 2 ? 0.28 : 0.9}
-                    stroke={WARN[w.severity]}
-                    strokeWidth={px(a.length > 2 ? 1.5 : 2)}
-                    dash={w.extended ? [px(5), px(4)] : undefined}
-                  />
-                )),
-              )}
-          </Layer>
-
-          {/* Cotas, asas y borrador */}
+          {/* Avisos, cotas, asas y borrador */}
           <Layer>
+            {/* Avisos: zonas en rojo (error) o ámbar (aviso) */}
+            <Group listening={false}>
+              {warnings
+                .filter((w) => w.severity !== 'info')
+                .flatMap((w) =>
+                  w.areas.map((a, i) => (
+                    <Line
+                      key={`${w.key}:${i}`}
+                      points={flat(a)}
+                      closed={a.length > 2}
+                      fill={a.length > 2 ? WARN[w.severity] : undefined}
+                      opacity={a.length > 2 ? 0.28 : 0.9}
+                      stroke={WARN[w.severity]}
+                      strokeWidth={px(a.length > 2 ? 1.5 : 2)}
+                      dash={w.extended ? [px(5), px(4)] : undefined}
+                    />
+                  )),
+                )}
+            </Group>
+
             {shown.walls.map((w) => (
               <WallDimension
                 key={w.id}

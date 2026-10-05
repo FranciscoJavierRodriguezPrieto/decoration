@@ -5,7 +5,16 @@
 import { createStore } from 'zustand/vanilla';
 
 export type Tool = 'select' | 'wall' | 'door' | 'window' | 'radiator';
-export type Tab = 'plano' | 'muebles';
+export type Tab = 'plano' | 'tres' | 'muebles';
+export type View3DMode = 'orbita' | 'primera' | 'planta';
+
+export interface View3D {
+  mode: View3DMode;
+  /** Hora solar para la luz del sol (6–21). */
+  hour: number;
+  /** Hacia dónde cae el norte en el plano, en grados horarios desde arriba. */
+  north: number;
+}
 export type Selection =
   | { kind: 'wall'; levelId: string; id: string }
   | { kind: 'item'; variantId: string; id: string }
@@ -28,6 +37,7 @@ export interface UiState {
   viewCenter: { x: number; y: number } | null;
   /** Avisos del motor de reglas: si se dibujan y con qué opciones (reglas 8 y 9). */
   showWarnings: boolean;
+  view3d: View3D;
   includeSeasonal: boolean;
   checkExtended: boolean;
 
@@ -40,6 +50,7 @@ export interface UiState {
   flash(message: string | null): void;
   setAdding(adding: boolean): void;
   setViewCenter(c: { x: number; y: number } | null): void;
+  setView3d(patch: Partial<View3D>): void;
   setRuleFlags(
     flags: Partial<Pick<UiState, 'showWarnings' | 'includeSeasonal' | 'checkExtended'>>,
   ): void;
@@ -58,6 +69,7 @@ export function createUiStore() {
     adding: false,
     viewCenter: null,
     showWarnings: true,
+    view3d: { mode: 'orbita', hour: 17, north: 0 },
     includeSeasonal: false,
     checkExtended: true,
 
@@ -70,6 +82,7 @@ export function createUiStore() {
     setAdding: (adding) => set(adding ? { adding, selection: null, tool: 'select' } : { adding }),
     setViewCenter: (viewCenter) => set({ viewCenter }),
     setRuleFlags: (flags) => set(flags),
+    setView3d: (patch) => set((s) => ({ view3d: { ...s.view3d, ...patch } })),
     reset: (levelId = null) =>
       set({ levelId, selection: null, tool: 'select', tab: 'plano', adding: false }),
   }));

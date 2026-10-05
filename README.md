@@ -2,7 +2,7 @@
 
 App de escritorio **100 % local** para levantar el plano de una vivienda, amueblarla con muebles reales y comparar distribuciones en 2D y 3D. Sin nube, sin cuentas, sin telemetría.
 
-> Estado: **fases 1 y 2 casi completas**. Plano 2D a escala editable (muros, puertas, ventanas, radiadores), muebles del catálogo genérico o con medidas pegadas de la tienda, y **avisos ergonómicos** en el plano: colisiones, paso libre, barrido de puertas, radiador, ventana, TV, comedor y huellas extendidas. Pendiente: importar PDF/imagen como fondo calibrado (fase 1) e imanes y "¿Dónde cabe?". El 3D es la fase 3 (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
+> Estado: **fases 1 y 2 casi completas**. Plano 2D a escala editable (muros, puertas, ventanas, radiadores), muebles del catálogo genérico o con medidas pegadas de la tienda, y **avisos ergonómicos** en el plano: colisiones, paso libre, barrido de puertas, radiador, ventana, TV, comedor y huellas extendidas. **Vista 3D** (fase 3): muros con huecos, muebles procedurales a medida, órbita con muros transparentes, primera persona con WASD y vista en planta, con el sol según la hora. Pendiente: importar PDF/imagen como fondo calibrado (fase 1), imanes y "¿Dónde cabe?" (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
 
 ## Lenguajes y piezas
 
@@ -12,7 +12,7 @@ App de escritorio **100 % local** para levantar el plano de una vivienda, amuebl
 | Interfaz | **TypeScript** (strict) + React 18 + Vite | Toda la UI |
 | Modelo de datos | zod | Valida todo archivo que entra; los tipos TS salen de los esquemas |
 | Estado | zustand + immer + zundo | Proyecto abierto con deshacer/rehacer (200 pasos) |
-| 2D (fase 1) / 3D (fase 3) | Konva / three.js + react-three-fiber | Plano a escala y vista navegable |
+| 2D / 3D | Konva / three.js + react-three-fiber | Plano a escala y vista navegable |
 | Tests | Vitest, `cargo test` (Playwright en la fase 1) | |
 
 ## Instalar sin compilar nada

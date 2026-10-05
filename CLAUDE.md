@@ -26,7 +26,7 @@ Lee este archivo entero antes de tocar código. La especificación completa est�
 | Front | **React 18 + TypeScript (strict) + Vite** | Ecosistema three.js maduro |
 | Estado | **Zustand** + **zundo** (deshacer/rehacer) + **immer** | Sencillo, serializable |
 | 2D | **react-konva** (Konva) | Arrastrar, rotar, snapping y miles de nodos con buen rendimiento |
-| 3D | **three.js** vía **@react-three/fiber** + **@react-three/drei** | Órbita, primera persona, sombras, GLTF |
+| 3D | **three.js** vía **@react-three/fiber** (sin drei, ADR 0003) | Órbita, primera persona, sombras, GLTF |
 | Geometría | **clipper2-js** (offsets/booleanas de muros), **polygon-clipping**, utilidades propias en `src/geometry` | Muros con grosor, huecos, áreas |
 | PDF/imagen | **pdfjs-dist** (worker empaquetado) | Importar el PDF del Catastro como fondo calcable |
 | DXF (fase 3) | **dxf-parser** | Planos de arquitecto |

@@ -189,5 +189,17 @@
   "fixtureRef.punto_luz": "el punto de luz",
   "fixtureRef.columna": "la columna",
   "fixtureRef.espejo": "el espejo",
-  "rule.doorRub": "Al abrir {b} roza con {a} ({cm} cm): no abre del todo"
+  "rule.doorRub": "Al abrir {b} roza con {a} ({cm} cm): no abre del todo",
+  "tabs.tres": "3D",
+  "v3d.title": "Vista 3D",
+  "v3d.orbita": "Órbita",
+  "v3d.primera": "Primera persona",
+  "v3d.planta": "Planta",
+  "v3d.hour": "Sol {h}",
+  "v3d.north": "Norte {deg}°",
+  "v3d.hint.orbita": "Arrastra para girar, rueda para acercar, clic derecho para desplazar. Los muros que tapan se vuelven transparentes.",
+  "v3d.hint.primera": "Clic en la vista para caminar: WASD o flechas y ratón para mirar. Esc para soltar.",
+  "v3d.hint.planta": "Vista cenital. Arrastra para desplazar y rueda para acercar.",
+  "v3d.clickToWalk": "Haz clic para caminar (WASD + ratón · Esc para salir)",
+  "v3d.loading": "Cargando la vista 3D…"
 }
