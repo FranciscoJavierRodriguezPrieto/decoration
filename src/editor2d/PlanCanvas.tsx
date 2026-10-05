@@ -130,6 +130,15 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey }: Props
     if (size.width > 0) fit();
   }, [fit, size.width]);
 
+  // Centro visible del plano: ahí aparecen los muebles nuevos.
+  useEffect(() => {
+    if (size.width <= 0) return;
+    uiStore.getState().setViewCenter({
+      x: roundHalf((size.width / 2 - view.x) / view.scale),
+      y: roundHalf((size.height / 2 - view.y) / view.scale),
+    });
+  }, [view, size.width, size.height]);
+
   // Reencaje bajo demanda desde la barra de herramientas.
   useEffect(() => {
     const onFit = () => fit();

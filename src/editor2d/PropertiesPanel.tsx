@@ -325,6 +325,32 @@ export function PropertiesPanel({
           </select>
         </label>
         <p className="props__tip">{t('props.itemTip')}</p>
+        <div className="field-row props__actions">
+          <button
+            type="button"
+            onClick={() =>
+              uiStore.getState().select({
+                kind: 'item',
+                variantId,
+                id: store.duplicateItem(variantId, it.id),
+              })
+            }
+            title="Ctrl+D"
+          >
+            {t('props.duplicate')}
+          </button>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => {
+              store.removeItem(variantId, it.id);
+              uiStore.getState().select(null);
+            }}
+            title={t('props.removeTip')}
+          >
+            {t('props.remove')}
+          </button>
+        </div>
       </aside>
     );
   }
@@ -341,6 +367,7 @@ function Help() {
         <li>{t('help.vertex')}</li>
         <li>{t('help.wall')}</li>
         <li>{t('help.openings')}</li>
+        <li>{t('help.items')}</li>
         <li>{t('help.pan')}</li>
         <li>{t('help.undo')}</li>
       </ul>

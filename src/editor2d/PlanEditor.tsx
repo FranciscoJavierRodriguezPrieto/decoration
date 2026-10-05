@@ -1,5 +1,7 @@
 import { useEffect, useMemo } from 'react';
+import { AddItemPanel } from '../catalog/AddItemPanel';
 import { GRID_STEPS } from '../geometry/snap';
+import { levelBounds } from '../geometry/walls';
 import type { Level, Project } from '../model/project';
 import { BASE_VARIANT_ID } from '../model/project';
 import { resolveVariantItems } from '../model/variants';
@@ -38,6 +40,7 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
   const grid = useUi((s) => s.grid);
   const selection = useUi((s) => s.selection);
   const message = useUi((s) => s.message);
+  const adding = useUi((s) => s.adding);
   const hint = HINTS[tool];
 
   // Los avisos se borran solos a los 3 s.
@@ -55,27 +58,41 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
     return new Set(items.filter((i) => !own.has(i.id)).map((i) => i.id));
   }, [project, variantId, items]);
 
+  const fallbackCenter = useMemo(() => {
+    const b = levelBounds(level);
+    if (!b) return { x: 200, y: 200 };
+    return { x: Math.round((b.minX + b.maxX) / 2), y: Math.round((b.minY + b.maxY) / 2) };
+  }, [level]);
+
   // Atajos del editor (ESPECIFICACION §4.2).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const ui = uiStore.getState();
       const sel = ui.selection;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd' && sel?.kind === 'item') {
+        e.preventDefault();
+        const id = projectStore.getState().duplicateItem(sel.variantId, sel.id);
+        ui.select({ kind: 'item', variantId: sel.variantId, id });
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key.toLowerCase();
       const toolKey = TOOL_KEYS[k];
       if (toolKey) ui.setTool(toolKey);
       else if (k === '0') window.dispatchEvent(new Event('planocasa:fit'));
+      else if (k === 'm') ui.setAdding(!ui.adding);
       else if (k === 'escape') {
-        if (ui.tool !== 'select') ui.setTool('select');
+        if (ui.adding) ui.setAdding(false);
+        else if (ui.tool !== 'select') ui.setTool('select');
         else ui.select(null);
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && sel) {
         const store = projectStore.getState();
         if (sel.kind === 'wall') store.deleteWall(sel.levelId, sel.id);
         else if (sel.kind === 'opening') store.deleteOpening(sel.levelId, sel.id);
         else if (sel.kind === 'fixture') store.deleteFixture(sel.levelId, sel.id);
-        else return;
+        else store.removeItem(sel.variantId, sel.id);
         ui.select(null);
       } else if (k === 'r' && sel?.kind === 'item') {
         const it = items.find((i) => i.id === sel.id);
@@ -119,6 +136,16 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
         <span className="plan__sep" aria-hidden />
         <button
           type="button"
+          aria-pressed={adding}
+          className={adding ? 'tool tool--on' : 'tool'}
+          onClick={() => uiStore.getState().setAdding(!adding)}
+          title={`${t('tool.addItem')} (M)`}
+        >
+          {t('tool.addItem')} <kbd>M</kbd>
+        </button>
+        <span className="plan__sep" aria-hidden />
+        <button
+          type="button"
           className="tool"
           onClick={() => window.dispatchEvent(new Event('planocasa:fit'))}
           title={`${t('tool.fit')} (0)`}
@@ -150,13 +177,17 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
           inherited={inherited}
           fitKey={`${project.id}/${level.id}`}
         />
-        <PropertiesPanel
-          level={level}
-          items={items}
-          inherited={inherited}
-          variantId={variantId}
-          selection={selection}
-        />
+        {adding ? (
+          <AddItemPanel variantId={variantId} fallbackCenter={fallbackCenter} />
+        ) : (
+          <PropertiesPanel
+            level={level}
+            items={items}
+            inherited={inherited}
+            variantId={variantId}
+            selection={selection}
+          />
+        )}
       </div>
     </div>
   );

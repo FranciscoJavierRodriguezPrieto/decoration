@@ -120,6 +120,41 @@ describe('muebles en variantes', () => {
   });
 });
 
+describe('altas y bajas de muebles', () => {
+  const sofa = {
+    name: 'Sofá rojo',
+    category: 'sofa',
+    x: 200,
+    y: 60,
+    w: 165,
+    d: 95,
+    h: 78,
+    rotation: 0,
+    status: 'tengo' as const,
+  };
+
+  it('añadir, duplicar y quitar con deshacer', () => {
+    const id = s().addItem('M1', sofa);
+    const copy = s().duplicateItem('M1', id);
+    const items = resolveVariantItems(s().project!, 'M1');
+    expect(items.find((i) => i.id === copy)).toMatchObject({ x: 220, y: 80, w: 165 });
+    stillValid();
+    s().removeItem('M1', 'tv');
+    expect(resolveVariantItems(s().project!, 'M1').some((i) => i.id === 'tv')).toBe(false);
+    history().undo();
+    expect(resolveVariantItems(s().project!, 'M1').some((i) => i.id === 'tv')).toBe(true);
+  });
+
+  it('valida el mueble y los ids', () => {
+    expect(() => s().addItem('M1', { ...sofa, w: 0 })).toThrow();
+    expect(() => s().duplicateItem('M1', 'nada')).toThrow(/No existe/);
+    s().closeProject();
+    expect(() => s().addItem('M1', sofa)).toThrow(/ningún proyecto/);
+    expect(() => s().duplicateItem('M1', 'x')).toThrow(/ningún proyecto/);
+    expect(() => s().removeItem('M1', 'x')).toThrow(/ningún proyecto/);
+  });
+});
+
 describe('uiStore', () => {
   it('cambia de nivel, herramienta y pestaña limpiando la selección', () => {
     const ui = createUiStore();

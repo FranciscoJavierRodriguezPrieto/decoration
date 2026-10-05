@@ -22,6 +22,10 @@ export interface UiState {
   grid: number;
   /** Mensaje breve para el usuario (p. ej. "Ya hay otro hueco ahí"). */
   message: string | null;
+  /** Panel de añadir mueble abierto. */
+  adding: boolean;
+  /** Centro de la vista del plano en cm (donde aparecen los muebles nuevos). */
+  viewCenter: { x: number; y: number } | null;
 
   setLevel(levelId: string | null): void;
   select(selection: Selection): void;
@@ -30,6 +34,8 @@ export interface UiState {
   setGrid(grid: number): void;
   /** Muestra un aviso breve; `null` lo quita. */
   flash(message: string | null): void;
+  setAdding(adding: boolean): void;
+  setViewCenter(c: { x: number; y: number } | null): void;
   /** Vuelve al estado inicial (al abrir o cerrar un proyecto). */
   reset(levelId?: string | null): void;
 }
@@ -42,14 +48,19 @@ export function createUiStore() {
     tab: 'plano',
     grid: 5,
     message: null,
+    adding: false,
+    viewCenter: null,
 
     setLevel: (levelId) => set({ levelId, selection: null }),
-    select: (selection) => set({ selection }),
+    select: (selection) => set(selection ? { selection, adding: false } : { selection }),
     setTool: (tool) => set({ tool, selection: null }),
     setTab: (tab) => set({ tab }),
     setGrid: (grid) => set({ grid: grid > 0 ? grid : 1 }),
     flash: (message) => set({ message }),
-    reset: (levelId = null) => set({ levelId, selection: null, tool: 'select', tab: 'plano' }),
+    setAdding: (adding) => set(adding ? { adding, selection: null, tool: 'select' } : { adding }),
+    setViewCenter: (viewCenter) => set({ viewCenter }),
+    reset: (levelId = null) =>
+      set({ levelId, selection: null, tool: 'select', tab: 'plano', adding: false }),
   }));
 }
 
