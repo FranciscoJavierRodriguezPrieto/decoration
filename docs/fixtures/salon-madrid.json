@@ -1,0 +1,1536 @@
+{
+  "schemaVersion": 1,
+  "id": "salon-madrid",
+  "name": "Salón Madrid — sofá nuevo",
+  "createdAt": "2026-10-04T00:00:00Z",
+  "updatedAt": "2026-10-05T00:00:00Z",
+  "units": "cm",
+  "budget": {
+    "objetivo": 500,
+    "tope": 700,
+    "moneda": "EUR"
+  },
+  "levels": [
+    {
+      "id": "L0",
+      "name": "Salón",
+      "elevation": 0,
+      "ceilingHeight": 250,
+      "walls": [
+        {
+          "id": "w_sofa",
+          "a": {
+            "x": 0,
+            "y": 0
+          },
+          "b": {
+            "x": 450,
+            "y": 0
+          },
+          "thickness": 10,
+          "kind": "tabique"
+        },
+        {
+          "id": "w_ventana",
+          "a": {
+            "x": 450,
+            "y": 0
+          },
+          "b": {
+            "x": 450,
+            "y": 500
+          },
+          "thickness": 25,
+          "kind": "fachada"
+        },
+        {
+          "id": "w_tv",
+          "a": {
+            "x": 450,
+            "y": 500
+          },
+          "b": {
+            "x": 0,
+            "y": 500
+          },
+          "thickness": 10,
+          "kind": "tabique"
+        },
+        {
+          "id": "w_entrada",
+          "a": {
+            "x": 0,
+            "y": 500
+          },
+          "b": {
+            "x": 0,
+            "y": 0
+          },
+          "thickness": 10,
+          "kind": "tabique"
+        }
+      ],
+      "openings": [
+        {
+          "id": "puerta_entrada",
+          "wallId": "w_entrada",
+          "offset": 10,
+          "width": 90,
+          "kind": "puerta",
+          "height": 205,
+          "hinge": "izq",
+          "swing": "dentro"
+        },
+        {
+          "id": "ventana",
+          "wallId": "w_ventana",
+          "offset": 40,
+          "width": 160,
+          "kind": "ventana",
+          "height": 130,
+          "sill": 90
+        },
+        {
+          "id": "balcon",
+          "wallId": "w_ventana",
+          "offset": 370,
+          "width": 80,
+          "kind": "balconera",
+          "height": 210,
+          "sill": 0,
+          "swing": "dentro"
+        }
+      ],
+      "rooms": [
+        {
+          "id": "salon",
+          "name": "Salón-comedor",
+          "polygon": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 450,
+              "y": 0
+            },
+            {
+              "x": 450,
+              "y": 500
+            },
+            {
+              "x": 0,
+              "y": 500
+            }
+          ],
+          "floorMaterial": "tarima_clara"
+        }
+      ],
+      "fixtures": [
+        {
+          "id": "radiador",
+          "kind": "radiador",
+          "wallId": "w_ventana",
+          "x": 444,
+          "y": 120,
+          "w": 12,
+          "d": 160,
+          "h": 60,
+          "z": 15
+        },
+        {
+          "id": "espejo",
+          "kind": "espejo",
+          "wallId": "w_entrada",
+          "x": 1,
+          "y": 235,
+          "w": 2,
+          "d": 150,
+          "h": 80,
+          "z": 100
+        },
+        {
+          "id": "toma_tv",
+          "kind": "toma_tv",
+          "wallId": "w_tv",
+          "x": 260,
+          "y": 499,
+          "w": 10,
+          "d": 2,
+          "h": 10,
+          "z": 30
+        }
+      ],
+      "zones": [
+        {
+          "id": "zona_util",
+          "label": "Zona útil 230 cm",
+          "x": 0,
+          "y": 0,
+          "w": 450,
+          "d": 230
+        }
+      ]
+    }
+  ],
+  "variants": [
+    {
+      "id": "base",
+      "name": "Base (fijos)",
+      "items": [
+        {
+          "id": "mueble_tv",
+          "name": "Mueble TV",
+          "category": "mueble_bajo",
+          "x": 260,
+          "y": 480,
+          "w": 140,
+          "d": 40,
+          "h": 50,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#e8e4dc"
+        },
+        {
+          "id": "tv",
+          "name": "TV 55\"",
+          "category": "tv",
+          "x": 260,
+          "y": 488,
+          "w": 123,
+          "d": 8,
+          "h": 71,
+          "rotation": 180,
+          "status": "tengo",
+          "z": 50,
+          "params": {
+            "template": "tv",
+            "diagonalInch": 55
+          }
+        },
+        {
+          "id": "estanteria",
+          "name": "Estantería metálica",
+          "category": "estanteria",
+          "x": 150,
+          "y": 482.5,
+          "w": 60,
+          "d": 35,
+          "h": 163,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#6b6b6b"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "M1",
+      "name": "M1 · MOSCÚ en L con el rojo",
+      "notes": "MOSCÚ en la pared del sofá (chaise izquierda) y rojo en L bajo la ventana. Favorita.",
+      "score": 5,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "moscu",
+          "name": "MOSCÚ",
+          "category": "sofa",
+          "x": 223,
+          "y": 42.5,
+          "w": 236,
+          "d": 85,
+          "h": 85,
+          "rotation": 0,
+          "status": "candidato",
+          "color": "#cfc4b1",
+          "catalogId": "cat-moscu",
+          "params": {
+            "template": "sofa_chaise",
+            "chaiseSide": "izq",
+            "chaiseLen": 146,
+            "backHeight": 74
+          },
+          "extended": {
+            "w": 236,
+            "d": 146
+          }
+        },
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 380,
+          "y": 173,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 400,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 257.5,
+          "y": 180.0,
+          "w": 125,
+          "d": 150,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 365,
+          "y": 483,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "M2",
+      "name": "M2 · Rojo bajo el espejo",
+      "notes": "Rojo bajo el espejo y MOSCÚ en la pared del sofá (chaise derecha). Comedor junto al balcón: paso justo.",
+      "score": 3,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 55,
+          "y": 96,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 270,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "moscu",
+          "name": "MOSCÚ",
+          "category": "sofa",
+          "x": 233,
+          "y": 42.5,
+          "w": 236,
+          "d": 85,
+          "h": 85,
+          "rotation": 0,
+          "status": "candidato",
+          "color": "#cfc4b1",
+          "catalogId": "cat-moscu",
+          "params": {
+            "template": "sofa_chaise",
+            "chaiseSide": "der",
+            "chaiseLen": 146,
+            "backHeight": 74
+          },
+          "extended": {
+            "w": 236,
+            "d": 146
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 20,
+          "y": 200,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 408,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 190.0,
+          "y": 147.5,
+          "w": 140,
+          "d": 95,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 360,
+          "y": 290,
+          "w": 120,
+          "d": 80,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 336,
+          "y": 225,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 391,
+          "y": 225,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 336,
+          "y": 355,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 391,
+          "y": 355,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "M3",
+      "name": "M3 · Enfrentados",
+      "notes": "Rojo bajo el espejo y MOSCÚ bajo la ventana con chaise hacia la TV.",
+      "score": 2,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 55,
+          "y": 96,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 270,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "moscu",
+          "name": "MOSCÚ",
+          "category": "sofa",
+          "x": 392.5,
+          "y": 213,
+          "w": 236,
+          "d": 85,
+          "h": 85,
+          "rotation": 90,
+          "status": "candidato",
+          "color": "#cfc4b1",
+          "catalogId": "cat-moscu",
+          "params": {
+            "template": "sofa_chaise",
+            "chaiseSide": "der",
+            "chaiseLen": 146,
+            "backHeight": 74
+          },
+          "extended": {
+            "w": 236,
+            "d": 146
+          }
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 405,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 220,
+          "y": 15,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 205.0,
+          "y": 175.0,
+          "w": 150,
+          "d": 130,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "M4",
+      "name": "M4 · Rojo frente a la TV",
+      "notes": "Rojo en la pared del sofá y MOSCÚ en L bajo la ventana.",
+      "score": 4,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 86,
+          "y": 55,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "moscu",
+          "name": "MOSCÚ",
+          "category": "sofa",
+          "x": 392.5,
+          "y": 213,
+          "w": 236,
+          "d": 85,
+          "h": 85,
+          "rotation": 90,
+          "status": "candidato",
+          "color": "#cfc4b1",
+          "catalogId": "cat-moscu",
+          "params": {
+            "template": "sofa_chaise",
+            "chaiseSide": "der",
+            "chaiseLen": 146,
+            "backHeight": 74
+          },
+          "extended": {
+            "w": 236,
+            "d": 146
+          }
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 405,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 195,
+          "y": 15,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 210.0,
+          "y": 195.0,
+          "w": 140,
+          "d": 140,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "K1",
+      "name": "K1 · KANSAS en L con el rojo",
+      "notes": "KANSAS en la pared del sofá y rojo en L bajo la ventana.",
+      "score": 4,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "kansas",
+          "name": "KANSAS XL",
+          "category": "sofa",
+          "x": 222.5,
+          "y": 40,
+          "w": 235,
+          "d": 80,
+          "h": 105,
+          "rotation": 0,
+          "status": "candidato",
+          "color": "#9d9c97",
+          "catalogId": "cat-kansas",
+          "params": {
+            "template": "sofa_deslizante",
+            "backHeight": 97,
+            "slideExtra": 60
+          },
+          "extended": {
+            "w": 235,
+            "d": 140
+          }
+        },
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 380,
+          "y": 173,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 400,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 230.0,
+          "y": 175.0,
+          "w": 160,
+          "d": 150,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 365,
+          "y": 483,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "K2",
+      "name": "K2 · Rojo bajo el espejo",
+      "notes": "Rojo bajo el espejo y KANSAS en la pared del sofá. Comedor junto al balcón.",
+      "score": 3,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 55,
+          "y": 96,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 270,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "kansas",
+          "name": "KANSAS XL",
+          "category": "sofa",
+          "x": 232.5,
+          "y": 40,
+          "w": 235,
+          "d": 80,
+          "h": 105,
+          "rotation": 0,
+          "status": "candidato",
+          "color": "#9d9c97",
+          "catalogId": "cat-kansas",
+          "params": {
+            "template": "sofa_deslizante",
+            "backHeight": 97,
+            "slideExtra": 60
+          },
+          "extended": {
+            "w": 235,
+            "d": 140
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 20,
+          "y": 200,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 408,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 210.0,
+          "y": 145.0,
+          "w": 170,
+          "d": 100,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 360,
+          "y": 290,
+          "w": 120,
+          "d": 80,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 336,
+          "y": 225,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 391,
+          "y": 225,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 336,
+          "y": 355,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 391,
+          "y": 355,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "K3",
+      "name": "K3 · Enfrentados",
+      "notes": "Rojo bajo el espejo y KANSAS bajo la ventana (respaldo alto, tapa algo de luz).",
+      "score": 2,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 55,
+          "y": 96,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 270,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "kansas",
+          "name": "KANSAS XL",
+          "category": "sofa",
+          "x": 395,
+          "y": 212.5,
+          "w": 235,
+          "d": 80,
+          "h": 105,
+          "rotation": 90,
+          "status": "candidato",
+          "color": "#9d9c97",
+          "catalogId": "cat-kansas",
+          "params": {
+            "template": "sofa_deslizante",
+            "backHeight": 97,
+            "slideExtra": 60
+          },
+          "extended": {
+            "w": 235,
+            "d": 140
+          }
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 405,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 220,
+          "y": 15,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 225.0,
+          "y": 185.0,
+          "w": 190,
+          "d": 150,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    },
+    {
+      "id": "K4",
+      "name": "K4 · Rojo frente a la TV",
+      "notes": "Rojo en la pared del sofá y KANSAS en L bajo la ventana.",
+      "score": 3,
+      "parentId": "base",
+      "items": [
+        {
+          "id": "rojo",
+          "name": "Sofá rojo",
+          "category": "sofa",
+          "x": 86,
+          "y": 55,
+          "w": 162,
+          "d": 110,
+          "h": 78,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#b4532e",
+          "catalogId": "cat-rojo"
+        },
+        {
+          "id": "kansas",
+          "name": "KANSAS XL",
+          "category": "sofa",
+          "x": 395,
+          "y": 212.5,
+          "w": 235,
+          "d": 80,
+          "h": 105,
+          "rotation": 90,
+          "status": "candidato",
+          "color": "#9d9c97",
+          "catalogId": "cat-kansas",
+          "params": {
+            "template": "sofa_deslizante",
+            "backHeight": 97,
+            "slideExtra": 60
+          },
+          "extended": {
+            "w": 235,
+            "d": 140
+          }
+        },
+        {
+          "id": "arbol",
+          "name": "Árbol de Navidad",
+          "category": "arbol",
+          "x": 405,
+          "y": 45,
+          "w": 74,
+          "d": 74,
+          "h": 180,
+          "rotation": 0,
+          "status": "tengo",
+          "seasonal": true,
+          "params": {
+            "template": "arbol",
+            "radius": 37
+          }
+        },
+        {
+          "id": "cubo",
+          "name": "Cubo con planta",
+          "category": "planta",
+          "x": 195,
+          "y": 15,
+          "w": 40,
+          "d": 30,
+          "h": 40,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "alfombra",
+          "name": "Alfombra",
+          "category": "alfombra",
+          "x": 230.0,
+          "y": 200.0,
+          "w": 180,
+          "d": 150,
+          "h": 1,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#d9cbb3"
+        },
+        {
+          "id": "mesa",
+          "name": "Mesa comedor",
+          "category": "mesa",
+          "x": 40,
+          "y": 290,
+          "w": 80,
+          "d": 120,
+          "h": 75,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#c9a77c"
+        },
+        {
+          "id": "silla1",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 266,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla2",
+          "name": "Silla",
+          "category": "silla",
+          "x": 106,
+          "y": 326,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 90,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla3",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 207,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 0,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        },
+        {
+          "id": "silla4",
+          "name": "Silla",
+          "category": "silla",
+          "x": 40,
+          "y": 373,
+          "w": 42,
+          "d": 42,
+          "h": 85,
+          "rotation": 180,
+          "status": "tengo",
+          "color": "#f4f2ee"
+        }
+      ],
+      "removed": []
+    }
+  ],
+  "activeVariantId": "M1",
+  "catalog": [
+    {
+      "id": "cat-rojo",
+      "generic": false,
+      "category": "sofa",
+      "model": "Sofá rojo (propio)",
+      "w": 162,
+      "d": 110,
+      "h": 78,
+      "template": "sofa",
+      "currency": "EUR",
+      "price": 0
+    },
+    {
+      "id": "cat-moscu",
+      "generic": false,
+      "category": "sofa",
+      "model": "MOSCÚ",
+      "store": "Atrapamuebles",
+      "price": 445,
+      "shipping": 90,
+      "currency": "EUR",
+      "w": 236,
+      "d": 85,
+      "h": 85,
+      "extended": {
+        "w": 236,
+        "d": 146
+      },
+      "template": "sofa_chaise",
+      "params": {
+        "reversible": 1,
+        "arcon": 1,
+        "cama": 1,
+        "puffs": 2
+      },
+      "notes": "Tela Acualine, 25 kg, reversible"
+    },
+    {
+      "id": "cat-kansas",
+      "generic": false,
+      "category": "sofa",
+      "model": "KANSAS XL",
+      "store": "Atrapamuebles",
+      "price": 399,
+      "shipping": 78,
+      "currency": "EUR",
+      "w": 235,
+      "d": 80,
+      "h": 105,
+      "extended": {
+        "w": 235,
+        "d": 140
+      },
+      "template": "sofa_deslizante",
+      "params": {
+        "backHeight": 97,
+        "slideExtra": 60
+      },
+      "notes": "Asientos deslizantes y respaldos reclinables, desenfundable, hecho en España. Fondo extendido estimado: verificar."
+    }
+  ],
+  "_comentario": "Coordenadas en cm. Origen arriba-izquierda; X derecha, Y abajo (hacia la pared de la TV). x,y de muebles y fijos = CENTRO. rotation 0 = frente hacia +Y; 90 = frente hacia -X; 180 = hacia -Y; 270 = hacia +X. Las variantes guardan sus muebles sobre la base (mueble TV, TV, estantería)."
+}

@@ -1,0 +1,21 @@
+# Dependencias y builds
+node_modules/
+dist/
+coverage/
+src-tauri/target/
+src-tauri/gen/
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Datos personales que NO se suben (el repo es público):
+# descargas del Catastro y copias locales de trabajo
+/parcelas/
+/_local/
+*.planocasa
+*.planocasa-catalog
+!docs/fixtures/*.planocasa

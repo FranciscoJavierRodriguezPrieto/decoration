@@ -1,0 +1,74 @@
+# CI del repositorio. Solo infraestructura de desarrollo: la app no usa red.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  front:
+    name: Front (typecheck, lint, tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test:coverage
+      - run: pnpm build
+
+  core:
+    name: Núcleo Rust (.planocasa)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: cargo fmt --all --check
+        working-directory: src-tauri
+      - run: cargo clippy -p planocasa-core --all-targets -- -D warnings
+        working-directory: src-tauri
+      - run: cargo test -p planocasa-core
+        working-directory: src-tauri
+
+  windows:
+    name: App Tauri en Windows (plataforma principal)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # tauri-build necesita el front compilado (frontendDist) para generar el contexto.
+      - run: pnpm build
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+        working-directory: src-tauri
+      - run: cargo test --workspace
+        working-directory: src-tauri

@@ -1,0 +1,55 @@
+{
+  "app.name": "PlanoCasa",
+  "app.tagline": "Planos y decoración de tu casa, sin salir de tu ordenador",
+
+  "toolbar.open": "Abrir…",
+  "toolbar.save": "Guardar",
+  "toolbar.saveAs": "Guardar como…",
+  "toolbar.undo": "Deshacer",
+  "toolbar.redo": "Rehacer",
+  "toolbar.loadSample": "Abrir ejemplo",
+  "toolbar.close": "Cerrar",
+
+  "empty.title": "Ningún proyecto abierto",
+  "empty.body": "Abre un archivo .planocasa o .json, o carga el salón de ejemplo para ver cómo funciona.",
+
+  "status.saved": "Guardado",
+  "status.unsaved": "Cambios sin guardar",
+  "status.offline": "100 % local · sin conexión",
+  "status.browserMode": "Modo navegador: solo .json (el ZIP .planocasa necesita la app de escritorio)",
+  "status.file": "Archivo: {name}",
+  "status.noFile": "Sin guardar en disco",
+
+  "project.levels": "Niveles",
+  "project.variants": "Distribuciones",
+  "project.active": "Activa",
+  "project.area": "{area} m²",
+  "project.walls": "{n} muros",
+  "project.openings": "{n} huecos",
+  "project.fixtures": "{n} fijos",
+  "project.ceiling": "Techo {h} cm",
+  "project.catalog": "Productos en el catálogo: {n}",
+  "project.name": "Nombre del proyecto",
+
+  "variant.base": "Base",
+  "variant.items": "{n} muebles",
+  "variant.score": "Puntuación {n}/5",
+
+  "items.title": "Muebles de «{variant}»",
+  "items.name": "Mueble",
+  "items.size": "Ancho × fondo × alto",
+  "items.position": "Posición (centro)",
+  "items.rotation": "Giro",
+  "items.status": "Estado",
+  "items.inherited": "heredado de la base",
+  "items.seasonal": "temporada",
+
+  "status.tengo": "Tengo",
+  "status.candidato": "Candidato",
+  "status.descartado": "Descartado",
+
+  "error.title": "No se pudo abrir el proyecto",
+  "error.saveTitle": "No se pudo guardar",
+  "error.dismiss": "Entendido",
+  "error.more": "y {n} errores más"
+}

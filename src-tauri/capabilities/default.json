@@ -1,0 +1,13 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permisos mínimos de la ventana principal: núcleo de Tauri y los comandos propios de abrir/guardar. Sin fs, sin http, sin dialog desde JS.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "allow-open-project",
+    "allow-save-project",
+    "allow-save-project-as",
+    "allow-current-file"
+  ]
+}
