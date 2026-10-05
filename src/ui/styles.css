@@ -744,3 +744,85 @@ button.danger {
 .plan-canvas--radiator {
   cursor: copy;
 }
+
+.props__actions button.danger {
+  margin-top: 0;
+}
+.add-item__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.add-item h3 {
+  font-size: 13px;
+  margin: 0 0 6px;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.add-item h4 {
+  font-size: 12px;
+  margin: 8px 0 4px;
+  color: var(--ink-3);
+}
+.add-item__custom,
+.add-item__catalog {
+  display: grid;
+  gap: 8px;
+}
+.add-item__custom {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.add-item__parsed {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.add-item__parsed--bad,
+.add-item__warn {
+  margin: 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+.add-item__search {
+  font: inherit;
+  font-size: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 8px;
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink);
+}
+.add-item ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.add-item li button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+  padding: 4px 6px;
+  font-size: 13px;
+}
+.add-item li button:hover {
+  border-color: var(--line);
+}
+.add-item__name {
+  flex: 1;
+}
+.add-item__size {
+  color: var(--ink-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}

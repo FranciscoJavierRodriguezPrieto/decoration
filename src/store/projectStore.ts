@@ -15,13 +15,14 @@ import type { Vec2 } from '../geometry/vec';
 import * as openings from '../geometry/openings';
 import * as walls from '../geometry/walls';
 import type { FileInfo } from '../io/fileGateway';
-import type { Level, Project, Wall } from '../model/project';
+import type { Item, Level, Project, Wall } from '../model/project';
 import {
   Fixture as FixtureSchema,
   Item as ItemSchema,
   Opening as OpeningSchema,
   Wall as WallSchema,
 } from '../model/schemas';
+import { addItemToVariant, removeItemFromVariant } from '../model/variantEdits';
 import { resolveVariantItems } from '../model/variants';
 
 export const HISTORY_LIMIT = 200;
@@ -80,6 +81,12 @@ export interface ProjectState {
    * base no cambia (ESPECIFICACION §6).
    */
   editItemInVariant(variantId: string, itemId: string, patch: ItemPatch): void;
+  /** Añade un mueble a la variante. Devuelve su id. */
+  addItem(variantId: string, item: Omit<Item, 'id'>): string;
+  /** Duplica un mueble visible en la variante, desplazado 20 cm. Devuelve el id nuevo. */
+  duplicateItem(variantId: string, itemId: string): string;
+  /** Quita un mueble de la variante (si es heredado, la base no cambia). */
+  removeItem(variantId: string, itemId: string): void;
 
   // --- Edición del plano (fase 1) -----------------------------------------
   /** Mueve una esquina: todos los muros y estancias que la comparten. */
@@ -225,6 +232,46 @@ export function createProjectStore(
               draft.variants
                 .find((v) => v.id === variantId)
                 ?.items.push({ ...inherited, ...valid });
+            });
+          },
+
+          addItem(variantId, item) {
+            const p = get().project;
+            if (!p) throw new Error('No hay ningún proyecto abierto');
+            const full = ItemSchema.parse({ ...item, id: 'tmp' });
+            const { project: next, id } = addItemToVariant(p, variantId, full);
+            const created = next.variants
+              .find((v) => v.id === variantId)
+              ?.items.find((i) => i.id === id);
+            mutate((draft) => {
+              const v = draft.variants.find((x) => x.id === variantId);
+              if (v && created) v.items.push(created);
+            });
+            return id;
+          },
+
+          duplicateItem(variantId, itemId) {
+            const p = get().project;
+            if (!p) throw new Error('No hay ningún proyecto abierto');
+            const src = resolveVariantItems(p, variantId).find((i) => i.id === itemId);
+            if (!src)
+              throw new Error(`No existe el mueble "${itemId}" en la variante "${variantId}"`);
+            const { id: _old, ...rest } = src;
+            void _old;
+            return get().addItem(variantId, { ...rest, x: src.x + 20, y: src.y + 20 });
+          },
+
+          removeItem(variantId, itemId) {
+            const p = get().project;
+            if (!p) throw new Error('No hay ningún proyecto abierto');
+            const next = removeItemFromVariant(p, variantId, itemId);
+            const v = next.variants.find((x) => x.id === variantId);
+            if (!v) return;
+            mutate((draft) => {
+              const dv = draft.variants.find((x) => x.id === variantId);
+              if (!dv) return;
+              dv.items = v.items;
+              dv.removed = v.removed;
             });
           },
 
