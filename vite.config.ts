@@ -21,6 +21,8 @@ export default defineConfig({
     target: process.env.TAURI_ENV_PLATFORM === 'windows' ? 'chrome110' : 'safari15',
     minify: process.env.TAURI_ENV_DEBUG ? false : 'esbuild',
     sourcemap: Boolean(process.env.TAURI_ENV_DEBUG),
+    // App local: un único bundle grande no penaliza (no hay red).
+    chunkSizeWarningLimit: 1500,
   },
   test: {
     environment: 'node',

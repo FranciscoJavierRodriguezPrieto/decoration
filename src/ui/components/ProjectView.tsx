@@ -3,7 +3,10 @@ import { areaM2 } from '../../geometry/polygon';
 import type { Item, Project } from '../../model/project';
 import { BASE_VARIANT_ID } from '../../model/project';
 import { resolveVariantItems } from '../../model/variants';
+import { PlanEditor } from '../../editor2d/PlanEditor';
+import { useUi } from '../../store/hooks';
 import { projectStore } from '../../store/projectStore';
+import { uiStore } from '../../store/uiStore';
 import { formatNumber, t } from '../i18n';
 
 const cm = (n: number) => formatNumber(n, 1);
@@ -16,6 +19,9 @@ export function ProjectView({ project }: { project: Project }) {
     [project],
   );
   const ownIds = useMemo(() => new Set(active?.items.map((i) => i.id) ?? []), [active]);
+  const tab = useUi((s) => s.tab);
+  const levelId = useUi((s) => s.levelId);
+  const level = project.levels.find((l) => l.id === levelId) ?? project.levels[0];
 
   return (
     <div className="project">
@@ -26,8 +32,18 @@ export function ProjectView({ project }: { project: Project }) {
           <h2>{t('project.levels')}</h2>
           {project.levels.map((l) => {
             const area = l.rooms.reduce((s, r) => s + areaM2(r.polygon), 0);
+            const current = l.id === level?.id;
             return (
-              <div key={l.id} className="level">
+              <button
+                key={l.id}
+                type="button"
+                className={current ? 'level level--active' : 'level'}
+                aria-pressed={current}
+                onClick={() => {
+                  uiStore.getState().setLevel(l.id);
+                  uiStore.getState().setTab('plano');
+                }}
+              >
                 <div className="level__head">
                   <strong>{l.name}</strong>
                   <span className="num">{t('project.area', { area: formatNumber(area) })}</span>
@@ -38,7 +54,7 @@ export function ProjectView({ project }: { project: Project }) {
                   <span>{t('project.fixtures', { n: l.fixtures.length })}</span>
                   <span>{t('project.ceiling', { h: l.ceilingHeight })}</span>
                 </div>
-              </div>
+              </button>
             );
           })}
         </section>
@@ -74,33 +90,58 @@ export function ProjectView({ project }: { project: Project }) {
         <p className="sidebar__foot">{t('project.catalog', { n: project.catalog.length })}</p>
       </aside>
 
-      <section className="content">
-        <header className="content__head">
-          <h1>{t('items.title', { variant: active?.name ?? project.activeVariantId })}</h1>
-          {active?.notes && <p className="notes">{active.notes}</p>}
-        </header>
-        <table className="items">
-          <thead>
-            <tr>
-              <th>{t('items.name')}</th>
-              <th className="num">{t('items.size')}</th>
-              <th className="num">{t('items.position')}</th>
-              <th className="num">{t('items.rotation')}</th>
-              <th>{t('items.status')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it) => (
-              <ItemRow
-                key={it.id}
-                item={it}
-                inherited={
-                  baseIds.has(it.id) && !ownIds.has(it.id) && active?.id !== BASE_VARIANT_ID
-                }
-              />
-            ))}
-          </tbody>
-        </table>
+      <section className="workspace">
+        <nav className="tabs" role="tablist" aria-label={t('tabs.label')}>
+          {(['plano', 'muebles'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={tab === id ? 'tab tab--on' : 'tab'}
+              onClick={() => uiStore.getState().setTab(id)}
+            >
+              {t(`tabs.${id}`)}
+            </button>
+          ))}
+          <span className="tabs__variant">
+            {t('tabs.variant', {
+              variant: active?.id === BASE_VARIANT_ID ? t('variant.base') : (active?.name ?? ''),
+            })}
+          </span>
+        </nav>
+        {tab === 'plano' && level ? (
+          <PlanEditor project={project} level={level} />
+        ) : (
+          <div className="content">
+            <header className="content__head">
+              <h1>{t('items.title', { variant: active?.name ?? project.activeVariantId })}</h1>
+              {active?.notes && <p className="notes">{active.notes}</p>}
+            </header>
+            <table className="items">
+              <thead>
+                <tr>
+                  <th>{t('items.name')}</th>
+                  <th className="num">{t('items.size')}</th>
+                  <th className="num">{t('items.position')}</th>
+                  <th className="num">{t('items.rotation')}</th>
+                  <th>{t('items.status')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it) => (
+                  <ItemRow
+                    key={it.id}
+                    item={it}
+                    inherited={
+                      baseIds.has(it.id) && !ownIds.has(it.id) && active?.id !== BASE_VARIANT_ID
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );
