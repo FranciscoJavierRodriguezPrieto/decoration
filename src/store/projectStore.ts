@@ -11,9 +11,12 @@ import type { z } from 'zod';
 import { temporal, type TemporalState } from 'zundo';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import { immer } from 'zustand/middleware/immer';
+import type { Vec2 } from '../geometry/vec';
+import * as walls from '../geometry/walls';
 import type { FileInfo } from '../io/fileGateway';
-import type { Project } from '../model/project';
-import { Item as ItemSchema } from '../model/schemas';
+import type { Level, Project, Wall } from '../model/project';
+import { Item as ItemSchema, Wall as WallSchema } from '../model/schemas';
+import { resolveVariantItems } from '../model/variants';
 
 export const HISTORY_LIMIT = 200;
 
@@ -34,6 +37,13 @@ export const ItemPatch = ItemSchema.pick({
   .strict();
 export type ItemPatch = z.infer<typeof ItemPatch>;
 
+/** Campos de un muro editables desde el panel de propiedades. */
+export const WallPatch = WallSchema.innerType()
+  .pick({ thickness: true, kind: true })
+  .partial()
+  .strict();
+export type WallPatch = z.infer<typeof WallPatch>;
+
 export interface ProjectState {
   project: Project | null;
   savedProject: Project | null;
@@ -50,6 +60,21 @@ export interface ProjectState {
   setActiveVariant(variantId: string): void;
   /** Cambia un mueble de la variante dada. Lanza si el parche no es válido. */
   updateItem(variantId: string, itemId: string, patch: ItemPatch): void;
+  /**
+   * Mueve o cambia un mueble tal como se ve en la variante. Si el mueble es
+   * heredado (vive en la base), la variante guarda una copia sobrescrita y la
+   * base no cambia (ESPECIFICACION §6).
+   */
+  editItemInVariant(variantId: string, itemId: string, patch: ItemPatch): void;
+
+  // --- Edición del plano (fase 1) -----------------------------------------
+  /** Mueve una esquina: todos los muros y estancias que la comparten. */
+  moveVertex(levelId: string, from: Vec2, to: Vec2): void;
+  setWallLength(levelId: string, wallId: string, length: number): void;
+  updateWall(levelId: string, wallId: string, patch: WallPatch): void;
+  /** Crea un muro y devuelve su id. */
+  addWall(levelId: string, a: Vec2, b: Vec2, opts?: Pick<Wall, 'thickness' | 'kind'>): string;
+  deleteWall(levelId: string, wallId: string): void;
 }
 
 type HistoryState = Pick<ProjectState, 'project'>;
@@ -73,6 +98,23 @@ export function createProjectStore(
             if (!s.project) return;
             fn(s.project);
             s.project.updatedAt = now();
+          });
+        };
+
+        const levelIndex = (levelId: string): number => {
+          const i = get().project?.levels.findIndex((l) => l.id === levelId) ?? -1;
+          if (i < 0) throw new Error(`Nivel inexistente: "${levelId}"`);
+          return i;
+        };
+
+        /** Sustituye un nivel por el resultado de una edición pura. */
+        const editLevel = (levelId: string, fn: (l: Level) => Level): void => {
+          const i = levelIndex(levelId);
+          const current = get().project?.levels[i];
+          if (!current) return;
+          const next = fn(current);
+          mutate((p) => {
+            p.levels[i] = next;
           });
         };
 
@@ -134,6 +176,62 @@ export function createProjectStore(
                 ?.items.find((i) => i.id === itemId);
               if (item) Object.assign(item, valid);
             });
+          },
+
+          editItemInVariant(variantId, itemId, patch) {
+            const valid = ItemPatch.parse(patch);
+            const p = get().project;
+            if (!p) throw new Error('No hay ningún proyecto abierto');
+            const variant = p.variants.find((v) => v.id === variantId);
+            if (!variant) throw new Error(`Variante inexistente: "${variantId}"`);
+            if (variant.items.some((i) => i.id === itemId)) {
+              get().updateItem(variantId, itemId, valid);
+              return;
+            }
+            const inherited = resolveVariantItems(p, variantId).find((i) => i.id === itemId);
+            if (!inherited) {
+              throw new Error(`No existe el mueble "${itemId}" en la variante "${variantId}"`);
+            }
+            mutate((draft) => {
+              draft.variants
+                .find((v) => v.id === variantId)
+                ?.items.push({ ...inherited, ...valid });
+            });
+          },
+
+          moveVertex(levelId, from, to) {
+            editLevel(levelId, (l) => walls.moveVertex(l, from, to));
+          },
+
+          setWallLength(levelId, wallId, length) {
+            editLevel(levelId, (l) => walls.setWallLength(l, wallId, length));
+          },
+
+          updateWall(levelId, wallId, patch) {
+            const valid = WallPatch.parse(patch);
+            editLevel(levelId, (l) => {
+              if (!l.walls.some((w) => w.id === wallId)) {
+                throw new Error(`Muro inexistente: "${wallId}"`);
+              }
+              return {
+                ...l,
+                walls: l.walls.map((w) => (w.id === wallId ? { ...w, ...valid } : w)),
+              };
+            });
+          },
+
+          addWall(levelId, a, b, opts) {
+            let created = '';
+            editLevel(levelId, (l) => {
+              const r = walls.addWall(l, a, b, opts);
+              created = r.id;
+              return r.level;
+            });
+            return created;
+          },
+
+          deleteWall(levelId, wallId) {
+            editLevel(levelId, (l) => walls.deleteWall(l, wallId));
           },
         };
       }),

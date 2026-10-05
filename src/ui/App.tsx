@@ -10,6 +10,7 @@ import {
 import type { ProjectIssue } from '../io/projectJson';
 import { useHistory, useProject } from '../store/hooks';
 import { isDirty, projectStore } from '../store/projectStore';
+import { uiStore } from '../store/uiStore';
 import { EmptyState } from './components/EmptyState';
 import { ErrorPanel } from './components/ErrorPanel';
 import { ProjectView } from './components/ProjectView';
@@ -82,6 +83,16 @@ export function App() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [busy, onOpen, onSave, onSaveAs, onUndo, onRedo]);
+
+  // Al abrir otro proyecto (u otro archivo), la UI vuelve al plano del primer nivel.
+  const projectId = project?.id;
+  const firstLevel = project?.levels[0]?.id ?? null;
+  const fileName = file?.fileName;
+  useEffect(() => {
+    uiStore.getState().reset(firstLevel);
+    // Solo al cambiar de proyecto o archivo, no en cada edición.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, fileName]);
 
   // Título de la ventana: "• salon.planocasa — PlanoCasa".
   useEffect(() => {

@@ -7,3 +7,10 @@ Todo asset que se empaquete con la app (texturas, modelos, fuentes, iconos) debe
 | `src-tauri/icons/*` | Propio (generado para PlanoCasa) | MIT, como el proyecto |
 
 No se empaquetan fuentes: la UI usa la fuente del sistema (Segoe UI en Windows).
+
+## Dependencias de runtime añadidas en la fase 1
+
+| Paquete | Versión | Licencia | Red en runtime |
+|---|---|---|---|
+| konva | 9.3 | MIT | No |
+| react-konva | 18.2 | MIT | No |
