@@ -1,0 +1,50 @@
+# Instalador de Windows (.exe NSIS y .msi). Se lanza a mano desde Actions
+# ("Run workflow") o al subir una etiqueta vX.Y.Z. El resultado queda como
+# artefacto descargable del run; con etiqueta, además, en un Release borrador.
+name: Instalador Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: tauri build (Windows x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm tauri build
+      - name: Subir instaladores
+        uses: actions/upload-artifact@v4
+        with:
+          name: planocasa-windows-x64
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+      - name: Release borrador (solo con etiqueta)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release create "$GITHUB_REF_NAME" --draft --title "PlanoCasa $GITHUB_REF_NAME" \
+            --notes "Instaladores de Windows. Sin firmar: Windows SmartScreen pedirá confirmación." \
+            src-tauri/target/release/bundle/nsis/*.exe \
+            src-tauri/target/release/bundle/msi/*.msi

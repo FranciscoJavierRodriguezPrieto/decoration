@@ -15,7 +15,15 @@ App de escritorio **100 % local** para levantar el plano de una vivienda, amuebl
 | 2D (fase 1) / 3D (fase 3) | Konva / three.js + react-three-fiber | Plano a escala y vista navegable |
 | Tests | Vitest, `cargo test` (Playwright en la fase 1) | |
 
-## Requisitos (Windows)
+## Instalar sin compilar nada
+
+1. GitHub → **Actions** → **Instalador Windows** → el último run en verde → artefacto `planocasa-windows-x64`.
+2. Descomprime y ejecuta `PlanoCasa_x.y.z_x64-setup.exe` (o el `.msi`).
+3. El instalador no está firmado: Windows SmartScreen mostrará "Windows protegió su PC" → **Más información** → **Ejecutar de todas formas**.
+
+Para generar uno nuevo: Actions → Instalador Windows → **Run workflow**, o sube una etiqueta `vX.Y.Z` (crea además un Release borrador).
+
+## Requisitos para desarrollar (Windows)
 
 1. **Rust** con la toolchain MSVC: instala [rustup](https://rustup.rs) y, si te lo pide, *Visual Studio Build Tools* con "Desarrollo para el escritorio con C++".
 2. **Node.js 22 LTS** y **pnpm**: `corepack enable` (pnpm viene con Node vía corepack).
