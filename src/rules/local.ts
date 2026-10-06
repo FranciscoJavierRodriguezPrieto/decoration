@@ -8,11 +8,14 @@ import {
   itemFaceCenter,
   itemFront,
   openingFace,
+  openingProbe,
+  pointInPolygon,
   polygonDistance,
   type Poly,
 } from '../geometry/footprint';
 import { dist, dot, normalize, perp, sub, type Vec2 } from '../geometry/vec';
 import { wallDir } from '../geometry/walls';
+import { areaCm2 } from '../geometry/polygon';
 import type { Item } from '../model/project';
 import { t, type MessageKey } from '../ui/i18n';
 import { RULES, TUCK_PAIRS } from './config';
@@ -31,8 +34,27 @@ const r0 = (n: number) => Math.round(n);
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const fmt = (n: number) => String(n).replace('.', ',');
 
+/**
+ * Nombre legible de un hueco: "la puerta de «Cocina»" (la estancia más pequeña
+ * de las dos que une, que es a la que pertenece); si no hay estancias o hay
+ * varios huecos iguales en ella, se numeran.
+ */
 export function openingName(ctx: Pick<RuleContext, 'level'>, o: OpeningInfo['opening']): string {
   const label = t(`openingRef.${o.kind}` as MessageKey);
+  const room = (op: OpeningInfo['opening']) => {
+    const wall = ctx.level.walls.find((w) => w.id === op.wallId);
+    if (!wall) return null;
+    const hits = ([1, -1] as const)
+      .map((side) => openingProbe(wall, op, side, 20))
+      .flatMap((p) => ctx.level.rooms.filter((r) => pointInPolygon(p, r.polygon)));
+    return hits.sort((a, b) => areaCm2(a.polygon) - areaCm2(b.polygon))[0] ?? null;
+  };
+  const mine = room(o);
+  if (mine) {
+    const twins = ctx.level.openings.filter((x) => x.kind === o.kind && room(x)?.id === mine.id);
+    const base = t('rule.openingOf', { kind: label, room: mine.name });
+    return twins.length <= 1 ? base : t('rule.opening', { kind: base, n: twins.indexOf(o) + 1 });
+  }
   const same = ctx.level.openings.filter((x) => x.kind === o.kind);
   if (same.length <= 1) return label;
   return t('rule.opening', { kind: label, n: same.indexOf(o) + 1 });
@@ -226,7 +248,9 @@ export function freeDepth(
     ...ctx.walls.map((w) => w.poly),
   ];
   for (let depth = 2.5; depth <= max; depth += 2.5) {
-    const strip = faceStrip(s.item, face, depth, 1);
+    // Se recorta un 10 % por cada lado: una pared inclinada que roza la esquina
+    // no impide abrir el mueble.
+    const strip = faceStrip(s.item, face, depth, Math.max(1, s.item.w * 0.1));
     if (obstacles.some((p) => convexOverlap(strip, p) > 0.5)) return depth - 2.5;
   }
   return max;
