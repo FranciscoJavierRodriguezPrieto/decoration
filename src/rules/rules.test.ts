@@ -3,7 +3,7 @@ import type { Item, Level } from '../model/project';
 import { RULES } from './config';
 import { buildContext } from './context';
 import { countBySeverity, evaluateRules } from './index';
-import { tvInches, clearanceNeeded } from './local';
+import { clearanceNeeded, openingName, tvInches } from './local';
 import { endpoints, solidWallPieces } from './passage';
 import { DEFAULT_RULE_OPTIONS } from './types';
 
@@ -148,7 +148,7 @@ describe('2. paso libre', () => {
     expect(ws).toHaveLength(1);
     expect(ws[0]!.severity).toBe('aviso');
     expect(ws[0]!.objects).toEqual(expect.arrayContaining(['izq', 'der', 'door', 'balc']));
-    expect(ws[0]!.message).toMatch(/Paso de 7\d cm entre la puerta y la balconera/);
+    expect(ws[0]!.message).toMatch(/Paso de 7\d cm entre la puerta de «r» y la balconera de «r»/);
   });
 
   it('menos de 60 es error y cerrado del todo también', () => {
@@ -186,6 +186,27 @@ describe('2. paso libre', () => {
     const lvl = { ...room(), rooms: [] };
     const ws = evaluateRules(lvl, [item({ id: 'muro', x: 150, y: 150, w: 30, d: 300, h: 100 })]);
     expect(ws.some((w) => w.rule === 'paso')).toBe(true);
+  });
+});
+
+describe('nombres de los huecos', () => {
+  it('por estancia y numerados si se repiten', () => {
+    const lvl = room();
+    lvl.openings.push({
+      id: 'door2',
+      wallId: 'top',
+      offset: 300,
+      width: 80,
+      kind: 'puerta',
+      height: 203,
+    });
+    const ctx = buildContext(lvl, [], DEFAULT_RULE_OPTIONS);
+    expect(openingName(ctx, lvl.openings[0]!)).toBe('la puerta de «r» 1');
+    expect(openingName(ctx, lvl.openings[3]!)).toBe('la puerta de «r» 2');
+    expect(openingName(ctx, lvl.openings[2]!)).toBe('la ventana de «r»');
+    const bare = buildContext({ ...lvl, rooms: [] }, [], DEFAULT_RULE_OPTIONS);
+    expect(openingName(bare, lvl.openings[2]!)).toBe('la ventana');
+    expect(openingName(bare, lvl.openings[3]!)).toBe('la puerta 2');
   });
 });
 

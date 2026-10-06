@@ -201,5 +201,6 @@
   "v3d.hint.primera": "Clic en la vista para caminar: WASD o flechas y ratón para mirar. Esc para soltar.",
   "v3d.hint.planta": "Vista cenital. Arrastra para desplazar y rueda para acercar.",
   "v3d.clickToWalk": "Haz clic para caminar (WASD + ratón · Esc para salir)",
-  "v3d.loading": "Cargando la vista 3D…"
+  "v3d.loading": "Cargando la vista 3D…",
+  "rule.openingOf": "{kind} de «{room}»"
 }
