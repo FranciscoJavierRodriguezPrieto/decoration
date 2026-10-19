@@ -1,13 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permisos mínimos de la ventana principal: núcleo de Tauri y los comandos propios de abrir/guardar. Sin fs, sin http, sin dialog desde JS.",
+  "description": "Permisos mínimos de la ventana principal: núcleo de Tauri y los comandos propios de abrir/guardar e importar el plano de fondo. Sin fs, sin http, sin dialog desde JS.",
   "windows": ["main"],
   "permissions": [
     "core:default",
     "allow-open-project",
     "allow-save-project",
     "allow-save-project-as",
-    "allow-current-file"
+    "allow-current-file",
+    "allow-import-background",
+    "allow-read-asset",
+    "allow-reset-session"
   ]
 }

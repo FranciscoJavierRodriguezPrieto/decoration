@@ -174,3 +174,43 @@ describe('uiStore', () => {
     expect(ui.getState()).toMatchObject({ levelId: 'L1', tool: 'select', tab: 'plano' });
   });
 });
+
+describe('plano de fondo', () => {
+  const bg = {
+    asset: 'fondo-1.pdf',
+    page: 1,
+    cmPerPx: 1.5,
+    offset: { x: -12.3, y: 4 },
+    rotation: 2.5,
+    opacity: 0.5,
+  };
+
+  it('poner, calibrar y quitar el fondo: un paso de deshacer cada uno', () => {
+    s().setBackground('L0', bg);
+    expect(level().background).toEqual(bg);
+    stillValid();
+
+    s().setBackground('L0', { ...bg, cmPerPx: 2 });
+    expect(level().background?.cmPerPx).toBe(2);
+
+    s().setBackground('L0', null);
+    expect(level().background).toBeUndefined();
+    expect('background' in level()).toBe(false);
+    stillValid();
+
+    expect(history().pastStates).toHaveLength(3);
+    history().undo();
+    expect(level().background?.cmPerPx).toBe(2);
+    history().undo();
+    history().undo();
+    expect(level().background).toBeUndefined();
+    expect(isDirty(s())).toBe(false);
+  });
+
+  it('rechaza fondos no válidos sin tocar el proyecto', () => {
+    expect(() => s().setBackground('L0', { ...bg, opacity: 2 })).toThrow();
+    expect(() => s().setBackground('L0', { ...bg, cmPerPx: 0 })).toThrow();
+    expect(() => s().setBackground('nope', bg)).toThrow(/Nivel inexistente/);
+    expect(history().pastStates).toHaveLength(0);
+  });
+});

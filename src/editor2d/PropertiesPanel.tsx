@@ -383,6 +383,7 @@ function Help() {
       <ul>
         <li>{t('help.select')}</li>
         <li>{t('help.vertex')}</li>
+        <li>{t('help.background')}</li>
         <li>{t('help.wall')}</li>
         <li>{t('help.openings')}</li>
         <li>{t('help.items')}</li>

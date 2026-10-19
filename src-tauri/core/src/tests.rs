@@ -195,3 +195,194 @@ fn nombres_de_assets() {
         assert!(!is_safe_asset_name(ko), "{ko:?}");
     }
 }
+
+// ---------------------------------------------------------------------------
+// Assets nuevos, poda y lectura (fase 1: plano de fondo)
+// ---------------------------------------------------------------------------
+
+fn staged(entries: &[(&str, &[u8])]) -> BTreeMap<String, Vec<u8>> {
+    entries
+        .iter()
+        .map(|(n, b)| ((*n).to_owned(), b.to_vec()))
+        .collect()
+}
+
+#[test]
+fn guardar_con_assets_nuevos_los_mete_en_el_zip() {
+    let dir = tempdir().unwrap();
+    let dst = dir.path().join("casa.planocasa");
+    let nuevos = staged(&[("fondo-1.pdf", b"%PDF-1.7 ...")]);
+    save_with(
+        &dst,
+        FIXTURE,
+        SaveAssets {
+            staged: Some(&nuevos),
+            ..SaveAssets::default()
+        },
+    )
+    .unwrap();
+
+    assert_eq!(open(&dst).unwrap().assets, vec!["fondo-1.pdf"]);
+    assert_eq!(
+        read_asset(&dst, "fondo-1.pdf", Limits::default()).unwrap(),
+        b"%PDF-1.7 ..."
+    );
+}
+
+#[test]
+fn los_assets_nuevos_sustituyen_a_los_del_origen_y_se_conservan_los_demas() {
+    let dir = tempdir().unwrap();
+    let src = dir.path().join("origen.planocasa");
+    fs::write(
+        &src,
+        zip_with(&[
+            ("project.json", b"{}"),
+            ("assets/fondo.png", b"viejo"),
+            ("assets/foto.jpg", b"foto"),
+        ]),
+    )
+    .unwrap();
+    let nuevos = staged(&[("fondo.png", b"nuevo")]);
+    let dst = dir.path().join("casa.planocasa");
+    save_with(
+        &dst,
+        "{}",
+        SaveAssets {
+            from: Some(&src),
+            staged: Some(&nuevos),
+            keep: None,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(open(&dst).unwrap().assets, vec!["fondo.png", "foto.jpg"]);
+    assert_eq!(
+        read_asset(&dst, "fondo.png", Limits::default()).unwrap(),
+        b"nuevo"
+    );
+    assert_eq!(
+        read_asset(&dst, "foto.jpg", Limits::default()).unwrap(),
+        b"foto"
+    );
+}
+
+#[test]
+fn keep_poda_los_assets_que_el_proyecto_ya_no_usa() {
+    let dir = tempdir().unwrap();
+    let src = dir.path().join("casa.planocasa");
+    fs::write(
+        &src,
+        zip_with(&[
+            ("project.json", b"{}"),
+            ("assets/fondo-viejo.pdf", b"%PDF"),
+            ("assets/foto.jpg", b"foto"),
+        ]),
+    )
+    .unwrap();
+    let nuevos = staged(&[("fondo-nuevo.png", b"png"), ("descartado.png", b"x")]);
+    let keep: BTreeSet<String> = ["foto.jpg", "fondo-nuevo.png"]
+        .into_iter()
+        .map(String::from)
+        .collect();
+
+    // Guardar sobre sí mismo (el caso de Ctrl+S).
+    save_with(
+        &src,
+        "{}",
+        SaveAssets {
+            from: Some(&src),
+            staged: Some(&nuevos),
+            keep: Some(&keep),
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        open(&src).unwrap().assets,
+        vec!["fondo-nuevo.png", "foto.jpg"]
+    );
+}
+
+#[test]
+fn un_asset_nuevo_con_nombre_peligroso_no_se_guarda() {
+    let dir = tempdir().unwrap();
+    let dst = dir.path().join("casa.planocasa");
+    let malos = staged(&[("../fuera.png", b"x")]);
+    let r = save_with(
+        &dst,
+        "{}",
+        SaveAssets {
+            staged: Some(&malos),
+            ..SaveAssets::default()
+        },
+    );
+    assert!(matches!(r, Err(Error::UnsafeAssetName(_))));
+    assert!(!dst.exists(), "no deja archivo a medias");
+}
+
+#[test]
+fn read_asset_rechaza_nombres_peligrosos_e_inexistentes() {
+    let dir = tempdir().unwrap();
+    let p = dir.path().join("casa.planocasa");
+    fs::write(
+        &p,
+        zip_with(&[("project.json", b"{}"), ("assets/a.png", b"a")]),
+    )
+    .unwrap();
+
+    assert!(matches!(
+        read_asset(&p, "../project.json", Limits::default()),
+        Err(Error::UnsafeAssetName(_))
+    ));
+    assert!(matches!(
+        read_asset(&p, "b.png", Limits::default()),
+        Err(Error::AssetNotFound(_))
+    ));
+    let json = dir.path().join("casa.json");
+    fs::write(&json, "{}").unwrap();
+    assert!(matches!(
+        read_asset(&json, "a.png", Limits::default()),
+        Err(Error::AssetNotFound(_))
+    ));
+}
+
+#[test]
+fn read_asset_respeta_el_limite_de_tamano() {
+    let dir = tempdir().unwrap();
+    let p = dir.path().join("casa.planocasa");
+    fs::write(
+        &p,
+        zip_with(&[("project.json", b"{}"), ("assets/a.png", &[0u8; 64])]),
+    )
+    .unwrap();
+    let limits = Limits {
+        max_asset: 16,
+        ..Limits::default()
+    };
+    assert!(read_asset(&p, "a.png", limits).is_err());
+}
+
+#[test]
+fn el_tipo_del_plano_se_deduce_de_los_bytes() {
+    assert_eq!(
+        BackgroundKind::sniff(b"%PDF-1.4\n").unwrap(),
+        BackgroundKind::Pdf
+    );
+    assert_eq!(
+        BackgroundKind::sniff(b"\x89PNG\r\n\x1a\n....").unwrap(),
+        BackgroundKind::Png
+    );
+    assert_eq!(
+        BackgroundKind::sniff(&[0xFF, 0xD8, 0xFF, 0xE0]).unwrap(),
+        BackgroundKind::Jpeg
+    );
+    assert_eq!(
+        BackgroundKind::sniff(b"RIFF\0\0\0\0WEBPVP8 ").unwrap(),
+        BackgroundKind::Webp
+    );
+    // Un .exe renombrado a .png no cuela.
+    assert!(BackgroundKind::sniff(b"MZ\x90\0").is_err());
+    assert!(BackgroundKind::sniff(b"").is_err());
+    assert_eq!(BackgroundKind::Jpeg.ext(), "jpg");
+    assert!(BackgroundKind::Pdf.is_pdf());
+    assert!(!BackgroundKind::Png.is_pdf());
+}

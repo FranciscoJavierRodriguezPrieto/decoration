@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { defaultGateway } from '../io/fileGateway';
+import { useCallback, useEffect, useState } from 'react';
+import { appGateway } from '../io/fileGateway';
 import {
   loadSample,
+  newProject,
   openProject,
   saveProject,
   saveProjectAs,
@@ -24,7 +25,7 @@ interface ErrorState {
 }
 
 export function App() {
-  const gateway = useMemo(defaultGateway, []);
+  const gateway = appGateway();
   const project = useProject((s) => s.project);
   const file = useProject((s) => s.file);
   const dirty = useProject(isDirty);
@@ -58,7 +59,19 @@ export function App() {
     () => run('error.saveTitle', () => saveProjectAs(projectStore, gateway)),
     [run, gateway],
   );
-  const onSample = useCallback(() => run('error.title', () => loadSample(projectStore)), [run]);
+  const onNew = useCallback(
+    () => run('error.title', () => newProject(projectStore, gateway)),
+    [run, gateway],
+  );
+  const onSample = useCallback(
+    () =>
+      run('error.title', async () => {
+        // El ejemplo no tiene archivo: que "Guardar" no escriba sobre el anterior.
+        await gateway.reset().catch(() => undefined);
+        return loadSample(projectStore);
+      }),
+    [run, gateway],
+  );
   const onUndo = useCallback(() => projectStore.temporal.getState().undo(), []);
   const onRedo = useCallback(() => projectStore.temporal.getState().redo(), []);
 
@@ -68,6 +81,7 @@ export function App() {
       if (!(e.ctrlKey || e.metaKey) || busy) return;
       const k = e.key.toLowerCase();
       const map: Record<string, (() => void) | undefined> = {
+        n: onNew,
         o: onOpen,
         s: e.shiftKey ? onSaveAs : onSave,
         z: e.shiftKey ? onRedo : onUndo,
@@ -82,14 +96,19 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, onOpen, onSave, onSaveAs, onUndo, onRedo]);
+  }, [busy, onNew, onOpen, onSave, onSaveAs, onUndo, onRedo]);
 
   // Al abrir otro proyecto (u otro archivo), la UI vuelve al plano del primer nivel.
   const projectId = project?.id;
   const firstLevel = project?.levels[0]?.id ?? null;
   const fileName = file?.fileName;
+  const startsEmpty = Boolean(
+    project && project.levels[0]?.walls.length === 0 && !project.levels[0]?.background,
+  );
   useEffect(() => {
     uiStore.getState().reset(firstLevel);
+    // Proyecto vacío: lo primero es importar el plano (o dibujar a mano).
+    if (startsEmpty) uiStore.getState().setBackgroundPanel(true);
     // Solo al cambiar de proyecto o archivo, no en cada edición.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId, fileName]);
@@ -115,12 +134,13 @@ export function App() {
         onUndo={onUndo}
         onRedo={onRedo}
         onSample={onSample}
+        onNew={onNew}
       />
       <main className="app__main">
         {project ? (
           <ProjectView project={project} />
         ) : (
-          <EmptyState onOpen={onOpen} onSample={onSample} />
+          <EmptyState onNew={onNew} onOpen={onOpen} onSample={onSample} />
         )}
       </main>
       <StatusBar

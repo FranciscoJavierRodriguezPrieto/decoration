@@ -1,5 +1,6 @@
 mod commands;
 
+use commands::assets::StagedAssets;
 use commands::project::CurrentFile;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -9,11 +10,15 @@ pub fn run() {
         // ni para el sistema de archivos (ver docs/adr/0002).
         .plugin(tauri_plugin_dialog::init())
         .manage(CurrentFile::default())
+        .manage(StagedAssets::default())
         .invoke_handler(tauri::generate_handler![
             commands::project::open_project,
             commands::project::save_project,
             commands::project::save_project_as,
             commands::project::current_file,
+            commands::assets::import_background,
+            commands::assets::read_asset,
+            commands::assets::reset_session,
         ])
         .run(tauri::generate_context!())
         .expect("error al arrancar PlanoCasa");

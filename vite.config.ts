@@ -35,6 +35,7 @@ export default defineConfig({
         'src/rules/**',
         'src/store/**',
         'src/io/**',
+        'src/import/**',
         'src/viewer3d/**/*.ts',
       ],
       // Pegamento con DOM/Tauri/React: lo cubren los e2e, no los unitarios.
@@ -42,6 +43,8 @@ export default defineConfig({
         '**/*.test.ts',
         'src/model/index.ts',
         'src/io/fileGateway.ts',
+        // pdf.js e <img>: necesitan DOM (sus partes puras sí tienen tests).
+        'src/import/loadBackground.ts',
         'src/store/hooks.ts',
         // Texturas pintadas en un <canvas>: necesitan DOM.
         'src/viewer3d/materials.ts',

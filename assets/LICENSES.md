@@ -14,6 +14,7 @@ No se empaquetan fuentes: la UI usa la fuente del sistema (Segoe UI en Windows).
 |---|---|---|---|
 | konva | 9.3 | MIT | No |
 | react-konva | 18.2 | MIT | No |
+| pdfjs-dist | 4.10 | Apache-2.0 | No (se le pasan los bytes; sin `cMapUrl` ni `standardFontDataUrl`; worker empaquetado, ver ADR 0004) |
 
 ## Dependencias de runtime añadidas en la fase 3 (visor 3D)
 
