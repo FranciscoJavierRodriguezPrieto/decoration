@@ -14,6 +14,7 @@ interface Props {
   onUndo(): void;
   onRedo(): void;
   onSample(): void;
+  onNew(): void;
 }
 
 export function Toolbar(p: Props) {
@@ -31,6 +32,9 @@ export function Toolbar(p: Props) {
       </div>
 
       <nav className="toolbar__actions" aria-label="Archivo">
+        <button type="button" onClick={p.onNew} disabled={p.busy} title="Ctrl+N">
+          {t('toolbar.new')}
+        </button>
         <button type="button" onClick={p.onOpen} disabled={p.busy} title="Ctrl+O">
           {t('toolbar.open')}
         </button>

@@ -5,7 +5,17 @@
  */
 import type Konva from 'konva';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Circle, Group, Layer, Line, Rect, Shape, Stage, Text } from 'react-konva';
+import {
+  Circle,
+  Group,
+  Image as KonvaImage,
+  Layer,
+  Line,
+  Rect,
+  Shape,
+  Stage,
+  Text,
+} from 'react-konva';
 import {
   centeredOffset,
   fixtureOnWall,
@@ -36,6 +46,8 @@ import { FONT, PLAN, WARN } from './theme';
 import { fitView, zoomAt, type View } from './viewport';
 import type { RuleWarning } from '../rules';
 import { extendedFootprint, openingSide } from '../geometry/footprint';
+import { backgroundBounds, moveBackground, unionBounds } from '../import/background';
+import { useBackgroundImage } from './useBackgroundImage';
 
 const flat = (pts: readonly Vec2[]): number[] => pts.flatMap((p) => [p.x, p.y]);
 
@@ -89,9 +101,24 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
   const [draft, setDraft] = useState<WallDraft>({ start: null, cursor: null, typed: '' });
   const [hover, setHover] = useState<Hover | null>(null);
   const [openingPreview, setOpeningPreview] = useState<OpeningPreview | null>(null);
+  const [calibCursor, setCalibCursor] = useState<Vec2 | null>(null);
   const tool = useUi((s) => s.tool);
   const selection = useUi((s) => s.selection);
   const grid = useUi((s) => s.grid);
+  const backgroundPanel = useUi((s) => s.backgroundPanel);
+  const showBackground = useUi((s) => s.showBackground);
+  const calibration = useUi((s) => s.calibration);
+
+  // Plano de fondo (capa Fondo, ESPECIFICACION §4.1).
+  const bg = level.background;
+  const bgState = useBackgroundImage(bg);
+  const bgImage = bgState.status === 'ready' ? bgState.image : null;
+  const bgBounds = useMemo(
+    () => (bg && bgImage ? backgroundBounds(bg, bgImage) : null),
+    [bg, bgImage],
+  );
+  const bgKey = bgImage && bg ? `${bg.asset}#${bg.page ?? 1}` : '';
+  const bgEditable = backgroundPanel && tool === 'select';
 
   // Nivel que se dibuja: el real o, mientras se arrastra una esquina, la vista previa.
   const shown = useMemo(() => {
@@ -124,11 +151,16 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
     return () => ro.disconnect();
   }, []);
 
+  // Lo último dibujado, para encajar sin reencajar en cada edición.
+  const latest = useRef({ level, bgBounds });
+  latest.current = { level, bgBounds };
+
   const fit = useCallback(() => {
-    setView(fitView(levelBounds(level), size.width, size.height));
-    // `level` se lee en el momento de encajar; no queremos reencajar en cada edición.
+    const { level: l, bgBounds: b } = latest.current;
+    setView(fitView(unionBounds(levelBounds(l), b), size.width, size.height));
+    // Se reencaja al cambiar de nivel/proyecto o al cargar otro plano de fondo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size.width, size.height, fitKey]);
+  }, [size.width, size.height, fitKey, bgKey]);
 
   useEffect(() => {
     if (size.width > 0) fit();
@@ -154,6 +186,7 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
   useEffect(() => {
     setDraft({ start: null, cursor: null, typed: '' });
     setHover(null);
+    setCalibCursor(null);
   }, [tool, level.id]);
 
   /** Puntero en coordenadas del plano (cm). */
@@ -217,6 +250,10 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
   const placing = PLACING[tool];
 
   const onMouseMove = () => {
+    if (tool === 'calibrate') {
+      setCalibCursor(pointer());
+      return;
+    }
     if (placing) {
       const p = pointer();
       const hit = p ? nearestWall(level, p, Math.max(25, 30 / view.scale)) : null;
@@ -238,6 +275,11 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
   };
 
   const onStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (tool === 'calibrate') {
+      const p = pointer();
+      if (p && e.evt.button === 0) uiStore.getState().addCalibrationPoint(p);
+      return;
+    }
     if (placing) {
       if (!hover) return;
       const store = projectStore.getState();
@@ -368,6 +410,18 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
     e.target.position({ x: f.x - f.w / 2, y: f.y - f.d / 2 });
   };
 
+  const dropBackground = (e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!bg) return;
+    const delta = sub({ x: e.target.x(), y: e.target.y() }, bg.offset);
+    if (Math.hypot(delta.x, delta.y) < 0.01) return;
+    try {
+      projectStore.getState().setBackground(level.id, moveBackground(bg, delta));
+    } catch (err) {
+      uiStore.getState().flash(err instanceof Error ? err.message : String(err));
+      e.target.position(bg.offset);
+    }
+  };
+
   const px = (n: number) => n / view.scale; // n píxeles de pantalla en cm
   const selectable = tool === 'select';
 
@@ -386,7 +440,7 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
           scaleY={view.scale}
           x={view.x}
           y={view.y}
-          draggable={selectable}
+          draggable={selectable || tool === 'calibrate'}
           onDragEnd={onStageDragEnd}
           onWheel={onWheel}
           onMouseMove={onMouseMove}
@@ -442,6 +496,25 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
 
           {/* Muebles (debajo de los muros para que el canto del muro quede limpio) */}
           <Layer>
+            {/* Fondo: el plano importado, para calcar encima (sobre las estancias y
+                debajo de muebles y muros). Solo se arrastra con su panel abierto. */}
+            {bg && bgImage && showBackground && (
+              <Group listening={bgEditable}>
+                <KonvaImage
+                  image={bgImage.source}
+                  x={bg.offset.x}
+                  y={bg.offset.y}
+                  rotation={bg.rotation}
+                  width={bgImage.width * bg.cmPerPx}
+                  height={bgImage.height * bg.cmPerPx}
+                  opacity={bg.opacity}
+                  draggable={bgEditable}
+                  onDragEnd={dropBackground}
+                  onMouseEnter={(e) => setCursor(e, 'move')}
+                  onMouseLeave={(e) => setCursor(e, '')}
+                />
+              </Group>
+            )}
             {[...items]
               .sort((a, b) => (a.category === 'alfombra' ? -1 : b.category === 'alfombra' ? 1 : 0))
               .map((it) => (
@@ -605,6 +678,14 @@ export function PlanCanvas({ level, variantId, items, inherited, fitKey, warning
               <PlacingGhost level={level} hover={hover} kind={placing} px={px} />
             )}
             {tool === 'wall' && <WallDraftShape draft={draft} px={px} />}
+            {tool === 'calibrate' && (
+              <CalibrationShape
+                a={calibration.a}
+                b={calibration.b ?? calibCursor}
+                fixed={calibration.b !== null}
+                px={px}
+              />
+            )}
           </Layer>
         </Stage>
       )}
@@ -931,5 +1012,50 @@ function PlacingGhost({
       strokeWidth={px(1)}
       listening={false}
     />
+  );
+}
+
+/** Línea de calibración: dos puntos y lo que mide ahora entre ellos. */
+function CalibrationShape({
+  a,
+  b,
+  fixed,
+  px,
+}: {
+  a: Vec2 | null;
+  b: Vec2 | null;
+  fixed: boolean;
+  px: (n: number) => number;
+}) {
+  if (!a) return null;
+  const end = b ?? a;
+  const mid = scale(add(a, end), 0.5);
+  const len = dist(a, end);
+  return (
+    <Group listening={false}>
+      <Line
+        points={[a.x, a.y, end.x, end.y]}
+        stroke={PLAN.draft}
+        strokeWidth={px(2)}
+        dash={fixed ? [] : [px(6), px(4)]}
+      />
+      {[a, ...(b ? [end] : [])].map((p, i) => (
+        <Group key={i} x={p.x} y={p.y}>
+          <Circle radius={px(6)} stroke={PLAN.draft} strokeWidth={px(2)} fill={PLAN.handle} />
+          <Line points={[-px(10), 0, px(10), 0]} stroke={PLAN.draft} strokeWidth={px(1)} />
+          <Line points={[0, -px(10), 0, px(10)]} stroke={PLAN.draft} strokeWidth={px(1)} />
+        </Group>
+      ))}
+      {len > 0 && (
+        <Text
+          x={mid.x + px(8)}
+          y={mid.y + px(8)}
+          text={`${formatNumber(len, 1)} cm`}
+          fontFamily={FONT}
+          fontSize={px(13)}
+          fill={PLAN.draft}
+        />
+      )}
+    </Group>
   );
 }

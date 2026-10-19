@@ -9,6 +9,7 @@ import { useUi } from '../store/hooks';
 import { projectStore } from '../store/projectStore';
 import { uiStore, type Tool } from '../store/uiStore';
 import { t, type MessageKey } from '../ui/i18n';
+import { BackgroundPanel } from './BackgroundPanel';
 import { PlanCanvas } from './PlanCanvas';
 import { PropertiesPanel } from './PropertiesPanel';
 import { countBySeverity, evaluateRules } from '../rules';
@@ -34,6 +35,7 @@ const HINTS: Partial<Record<Tool, MessageKey>> = {
   door: 'tool.placeHint',
   window: 'tool.placeHint',
   radiator: 'tool.placeHint',
+  calibrate: 'tool.calibrateHint',
 };
 
 export function PlanEditor({ project, level }: { project: Project; level: Level }) {
@@ -42,6 +44,7 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
   const selection = useUi((s) => s.selection);
   const message = useUi((s) => s.message);
   const adding = useUi((s) => s.adding);
+  const backgroundPanel = useUi((s) => s.backgroundPanel);
   const showWarnings = useUi((s) => s.showWarnings);
   const includeSeasonal = useUi((s) => s.includeSeasonal);
   const checkExtended = useUi((s) => s.checkExtended);
@@ -94,8 +97,10 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
       if (toolKey) ui.setTool(toolKey);
       else if (k === '0') window.dispatchEvent(new Event('planocasa:fit'));
       else if (k === 'm') ui.setAdding(!ui.adding);
+      else if (k === 'b') ui.setBackgroundPanel(!ui.backgroundPanel);
       else if (k === 'escape') {
-        if (ui.adding) ui.setAdding(false);
+        if (ui.tool === 'calibrate') ui.setTool('select');
+        else if (ui.adding) ui.setAdding(false);
         else if (ui.tool !== 'select') ui.setTool('select');
         else ui.select(null);
       } else if ((e.key === 'Delete' || e.key === 'Backspace') && sel) {
@@ -154,6 +159,15 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
         >
           {t('tool.addItem')} <kbd>M</kbd>
         </button>
+        <button
+          type="button"
+          aria-pressed={backgroundPanel}
+          className={backgroundPanel ? 'tool tool--on' : 'tool'}
+          onClick={() => uiStore.getState().setBackgroundPanel(!backgroundPanel)}
+          title={`${t('tool.background')} (B)`}
+        >
+          {t('tool.background')} <kbd>B</kbd>
+        </button>
         <span className="plan__sep" aria-hidden />
         <button
           type="button"
@@ -200,6 +214,8 @@ export function PlanEditor({ project, level }: { project: Project; level: Level 
         />
         {adding ? (
           <AddItemPanel variantId={variantId} fallbackCenter={fallbackCenter} />
+        ) : backgroundPanel ? (
+          <BackgroundPanel level={level} />
         ) : (
           <PropertiesPanel
             level={level}

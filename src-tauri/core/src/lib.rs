@@ -10,7 +10,7 @@
 //! Aquí solo se garantiza que el contenedor es seguro (sin zip-slip ni bombas) y que el
 //! guardado es atómico (temporal + renombrado), para no corromper nunca un proyecto.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, Write};
 use std::path::{Path, PathBuf};
@@ -58,6 +58,12 @@ pub enum Error {
     TooLarge(String),
     #[error("extensión no soportada: usa .planocasa o .json")]
     UnsupportedExtension,
+    #[error("nombre de asset no válido: {0}")]
+    UnsafeAssetName(String),
+    #[error("el proyecto no contiene el archivo {0}")]
+    AssetNotFound(String),
+    #[error("formato no soportado: usa PDF, PNG, JPG o WEBP")]
+    UnsupportedAsset,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -197,12 +203,48 @@ pub fn read_zip<R: Read + Seek>(reader: R, limits: Limits) -> Result<OpenedProje
     })
 }
 
+/// Assets que acompañan a un guardado.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SaveAssets<'a> {
+    /// `.planocasa` del que se copian los assets que ya existían (sin recomprimir).
+    pub from: Option<&'a Path>,
+    /// Assets nuevos aún no guardados (p. ej. un plano recién importado). Ganan a `from`.
+    pub staged: Option<&'a BTreeMap<String, Vec<u8>>>,
+    /// Si se indica, solo se guardan estos assets: los que el proyecto ya no usa se podan.
+    pub keep: Option<&'a BTreeSet<String>>,
+}
+
+impl SaveAssets<'_> {
+    fn wanted(&self, name: &str) -> bool {
+        match self.keep {
+            None => true,
+            Some(k) => k.contains(name),
+        }
+    }
+}
+
 /// Escribe un `.planocasa` en `writer`, copiando los assets de `assets_from` sin
 /// recomprimirlos (si es un `.planocasa`).
 pub fn write_zip<W: Write + Seek>(
     writer: W,
     project_json: &str,
     assets_from: Option<&Path>,
+) -> Result<W> {
+    write_zip_with(
+        writer,
+        project_json,
+        SaveAssets {
+            from: assets_from,
+            ..SaveAssets::default()
+        },
+    )
+}
+
+/// Como [`write_zip`], con assets nuevos y poda (ver [`SaveAssets`]).
+pub fn write_zip_with<W: Write + Seek>(
+    writer: W,
+    project_json: &str,
+    assets: SaveAssets<'_>,
 ) -> Result<W> {
     let mut zip = ZipWriter::new(writer);
     let opts = SimpleFileOptions::default()
@@ -212,7 +254,26 @@ pub fn write_zip<W: Write + Seek>(
     zip.start_file(PROJECT_JSON, opts)?;
     zip.write_all(project_json.as_bytes())?;
 
-    if let Some(src) = assets_from {
+    let mut written = BTreeSet::new();
+    if let Some(staged) = assets.staged {
+        for (name, bytes) in staged {
+            if !is_safe_asset_name(name) {
+                return Err(Error::UnsafeAssetName(name.clone()));
+            }
+            if !assets.wanted(name) {
+                continue;
+            }
+            // PDF, PNG y JPG ya van comprimidos: se guardan tal cual.
+            let stored = SimpleFileOptions::default()
+                .compression_method(CompressionMethod::Stored)
+                .unix_permissions(0o644);
+            zip.start_file(format!("{ASSETS_PREFIX}{name}"), stored)?;
+            zip.write_all(bytes)?;
+            written.insert(name.as_str());
+        }
+    }
+
+    if let Some(src) = assets.from {
         if FileKind::from_path(src).ok() == Some(FileKind::Planocasa) && src.exists() {
             // Valida el origen antes de copiar nada.
             let file = File::open(src)?;
@@ -220,7 +281,10 @@ pub fn write_zip<W: Write + Seek>(
             let mut archive = ZipArchive::new(BufReader::new(File::open(src)?))?;
             for i in 0..archive.len() {
                 let entry = archive.by_index_raw(i)?;
-                if entry.is_file() && entry.name().starts_with(ASSETS_PREFIX) {
+                let Some(name) = entry.name().strip_prefix(ASSETS_PREFIX) else {
+                    continue;
+                };
+                if entry.is_file() && !written.contains(name) && assets.wanted(name) {
                     zip.raw_copy_file(entry)?;
                 }
             }
@@ -236,6 +300,18 @@ pub fn write_zip<W: Write + Seek>(
 /// - `.planocasa`: ZIP con `project.json` + assets copiados de `assets_from`.
 /// - `.json`: solo el JSON (los assets no caben en un JSON plano).
 pub fn save(path: &Path, project_json: &str, assets_from: Option<&Path>) -> Result<()> {
+    save_with(
+        path,
+        project_json,
+        SaveAssets {
+            from: assets_from,
+            ..SaveAssets::default()
+        },
+    )
+}
+
+/// Como [`save`], con assets nuevos y poda (ver [`SaveAssets`]).
+pub fn save_with(path: &Path, project_json: &str, assets: SaveAssets<'_>) -> Result<()> {
     let kind = FileKind::from_path(path)?;
     let tmp = temp_path_for(path);
 
@@ -247,7 +323,7 @@ pub fn save(path: &Path, project_json: &str, assets_from: Option<&Path>) -> Resu
                 w.write_all(project_json.as_bytes())?;
                 w.into_inner().map_err(|e| e.into_error())?
             }
-            FileKind::Planocasa => write_zip(BufWriter::new(file), project_json, assets_from)?
+            FileKind::Planocasa => write_zip_with(BufWriter::new(file), project_json, assets)?
                 .into_inner()
                 .map_err(|e| e.into_error())?,
         };
@@ -262,6 +338,66 @@ pub fn save(path: &Path, project_json: &str, assets_from: Option<&Path>) -> Resu
         let _ = fs::remove_file(&tmp);
     }
     result
+}
+
+/// Lee un asset (`assets/<name>`) de un `.planocasa`, validando antes el contenedor.
+pub fn read_asset(path: &Path, name: &str, limits: Limits) -> Result<Vec<u8>> {
+    if !is_safe_asset_name(name) {
+        return Err(Error::UnsafeAssetName(name.into()));
+    }
+    if FileKind::from_path(path)? != FileKind::Planocasa {
+        return Err(Error::AssetNotFound(name.into()));
+    }
+    let opened = read_zip(BufReader::new(File::open(path)?), limits)?;
+    if !opened.assets.iter().any(|a| a == name) {
+        return Err(Error::AssetNotFound(name.into()));
+    }
+    let mut archive = ZipArchive::new(BufReader::new(File::open(path)?))?;
+    let entry = archive.by_name(&format!("{ASSETS_PREFIX}{name}"))?;
+    let mut buf = Vec::new();
+    entry.take(limits.max_asset + 1).read_to_end(&mut buf)?;
+    if buf.len() as u64 > limits.max_asset {
+        return Err(Error::TooLarge(name.into()));
+    }
+    Ok(buf)
+}
+
+/// Tipo de un plano importado, deducido de sus primeros bytes (no de la extensión).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackgroundKind {
+    Pdf,
+    Png,
+    Jpeg,
+    Webp,
+}
+
+impl BackgroundKind {
+    pub fn sniff(bytes: &[u8]) -> Result<Self> {
+        if bytes.starts_with(b"%PDF-") {
+            Ok(Self::Pdf)
+        } else if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+            Ok(Self::Png)
+        } else if bytes.starts_with(&[0xFF, 0xD8, 0xFF]) {
+            Ok(Self::Jpeg)
+        } else if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+            Ok(Self::Webp)
+        } else {
+            Err(Error::UnsupportedAsset)
+        }
+    }
+
+    pub fn ext(self) -> &'static str {
+        match self {
+            Self::Pdf => "pdf",
+            Self::Png => "png",
+            Self::Jpeg => "jpg",
+            Self::Webp => "webp",
+        }
+    }
+
+    pub fn is_pdf(self) -> bool {
+        self == Self::Pdf
+    }
 }
 
 fn temp_path_for(path: &Path) -> PathBuf {

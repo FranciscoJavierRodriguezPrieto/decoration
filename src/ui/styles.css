@@ -956,3 +956,43 @@ button.danger {
   padding: 24px;
   color: var(--ink-2);
 }
+
+/* Plano de fondo (fase 1) */
+.plan-canvas--calibrate {
+  cursor: crosshair;
+}
+.bg-panel__section {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.bg-panel__section h3 {
+  font-size: 13px;
+  margin: 0;
+  color: var(--ink-2);
+}
+.bg-panel__steps {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.bg-panel__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.bg-panel input[type='range'] {
+  width: 100%;
+  accent-color: var(--teal-700);
+}
+.bg-panel__actions {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+}

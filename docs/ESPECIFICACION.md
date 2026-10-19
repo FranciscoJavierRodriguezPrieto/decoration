@@ -70,7 +70,7 @@ Que una persona sin conocimientos de CAD pueda, en menos de 30 minutos:
 ### 3.2 Flujo "Importar plano" (fase 1)
 
 1. El usuario elige un archivo: PDF (catastro, inmobiliaria, arquitecto), PNG/JPG (foto o escaneo) o, más adelante, DXF.
-2. PDF: se renderiza la página elegida con `pdfjs-dist` a 300 ppp en un canvas que queda como **capa de fondo** del nivel. Se guarda en `assets/` del proyecto.
+2. PDF: se renderiza la página elegida con `pdfjs-dist` (lado mayor a 4096 px, ≈350 ppp en A4) en un canvas que queda como **capa de fondo** del nivel. El archivo original se guarda en `assets/` del proyecto (ADR 0004).
 3. **Calibración:** el usuario marca dos puntos y escribe la distancia real ("este muro mide 450 cm"). La app calcula cm/píxel. Opcionalmente añade un segundo par de puntos para comprobar la escala y avisa si se desvía más de un 2 %.
 4. **Enderezar:** rotación fina del fondo (±15°) para alinear los muros con los ejes.
 5. **Calcar** con la herramienta de muros (§4) usando el fondo con opacidad regulable (0–100 %).

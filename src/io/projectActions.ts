@@ -3,6 +3,7 @@
  * Unen pasarela (E/S) + validación + store, sin React, para poder probarlos.
  */
 import sampleJson from '../../docs/fixtures/salon-madrid.json?raw';
+import { createEmptyProject, newProjectId, referencedAssets } from '../model/newProject';
 import type { ProjectStore } from '../store/projectStore';
 import type { FileGateway } from './fileGateway';
 import { parseProject, serializeProject, type ProjectIssue } from './projectJson';
@@ -41,6 +42,21 @@ export function loadSample(store: ProjectStore): ActionResult {
   return { ok: true };
 }
 
+/** Proyecto vacío, sin archivo, listo para importar el plano o dibujar. */
+export async function newProject(
+  store: ProjectStore,
+  gateway: FileGateway,
+  now: Date = new Date(),
+): Promise<ActionResult> {
+  try {
+    await gateway.reset();
+  } catch (e) {
+    return failure(errorMessage(e));
+  }
+  store.getState().loadProject(createEmptyProject(newProjectId(now), now.toISOString()), null);
+  return { ok: true };
+}
+
 export async function saveProjectAs(
   store: ProjectStore,
   gateway: FileGateway,
@@ -48,7 +64,11 @@ export async function saveProjectAs(
   const { project } = store.getState();
   if (!project) return failure('No hay ningún proyecto abierto');
   try {
-    const file = await gateway.saveAs(serializeProject(project), project.name);
+    const file = await gateway.saveAs(
+      serializeProject(project),
+      project.name,
+      referencedAssets(project),
+    );
     if (!file) return CANCELLED;
     store.getState().markSaved(file);
     return { ok: true };
@@ -65,7 +85,7 @@ export async function saveProject(
   if (!project) return failure('No hay ningún proyecto abierto');
   if (!file) return saveProjectAs(store, gateway);
   try {
-    const saved = await gateway.save(serializeProject(project));
+    const saved = await gateway.save(serializeProject(project), referencedAssets(project));
     if (!saved) return saveProjectAs(store, gateway);
     store.getState().markSaved(saved);
     return { ok: true };

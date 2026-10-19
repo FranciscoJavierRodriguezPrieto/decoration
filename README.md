@@ -2,7 +2,7 @@
 
 App de escritorio **100 % local** para levantar el plano de una vivienda, amueblarla con muebles reales y comparar distribuciones en 2D y 3D. Sin nube, sin cuentas, sin telemetría.
 
-> Estado: **fases 1 y 2 casi completas**. Plano 2D a escala editable (muros, puertas, ventanas, radiadores), muebles del catálogo genérico o con medidas pegadas de la tienda, y **avisos ergonómicos** en el plano: colisiones, paso libre, barrido de puertas, radiador, ventana, TV, comedor y huellas extendidas. **Vista 3D** (fase 3): muros con huecos, muebles procedurales a medida, órbita con muros transparentes, primera persona con WASD y vista en planta, con el sol según la hora. Pendiente: importar PDF/imagen como fondo calibrado (fase 1), imanes y "¿Dónde cabe?" (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
+> Estado: **fases 1 y 2 casi completas**. Plano 2D a escala editable (muros, puertas, ventanas, radiadores), **plano de fondo** importado de PDF o imagen, calibrado con una pared conocida y calcable, muebles del catálogo genérico o con medidas pegadas de la tienda, y **avisos ergonómicos** en el plano: colisiones, paso libre, barrido de puertas, radiador, ventana, TV, comedor y huellas extendidas. **Vista 3D** (fase 3): muros con huecos, muebles procedurales a medida, órbita con muros transparentes, primera persona con WASD y vista en planta, con el sol según la hora. Pendiente: imanes y "¿Dónde cabe?" (ver [hoja de ruta](docs/ESPECIFICACION.md#9-hoja-de-ruta)).
 
 ## Lenguajes y piezas
 
@@ -22,6 +22,14 @@ App de escritorio **100 % local** para levantar el plano de una vivienda, amuebl
 3. El instalador no está firmado: Windows SmartScreen mostrará "Windows protegió su PC" → **Más información** → **Ejecutar de todas formas**.
 
 Para generar uno nuevo: Actions → Instalador Windows → **Run workflow**, o sube una etiqueta `vX.Y.Z` (crea además un Release borrador).
+
+## Meter tu casa
+
+1. **Nuevo** (Ctrl+N) crea un proyecto vacío y abre el panel **Plano de fondo** (B).
+2. **Importar PDF o imagen…**: el PDF del Catastro o de la inmobiliaria, un escaneo o una foto hecha de frente.
+3. **Calibrar escala**: clic en los dos extremos de una pared cuya medida conozcas (cuanto más larga, mejor; acércate con la rueda), escribe lo que mide de verdad y **Aplicar**. Si el plano está torcido, deja marcado "Poner esta pared recta".
+4. **Muro (W)**: calca las paredes encima (clic en cada esquina; puedes escribir la longitud y pulsar Intro). Luego puertas (D), ventanas (N), radiadores (F) y muebles (M).
+5. **Guardar como…** crea el `.planocasa`, con el plano de fondo dentro. Se puede ocultar o bajar su transparencia cuando ya esté calcado.
 
 ## Requisitos para desarrollar (Windows)
 

@@ -17,6 +17,7 @@ import * as walls from '../geometry/walls';
 import type { FileInfo } from '../io/fileGateway';
 import type { Item, Level, Project, Wall } from '../model/project';
 import {
+  Background as BackgroundSchema,
   Fixture as FixtureSchema,
   Item as ItemSchema,
   Opening as OpeningSchema,
@@ -111,6 +112,9 @@ export interface ProjectState {
   addFixture(levelId: string, wallId: string, t: number, kind: openings.FixtureKind): string;
   updateFixture(levelId: string, id: string, patch: FixturePatch): void;
   deleteFixture(levelId: string, id: string): void;
+
+  /** Pone, cambia o quita (`null`) el plano de fondo del nivel. Un paso de deshacer. */
+  setBackground(levelId: string, background: z.infer<typeof BackgroundSchema> | null): void;
 }
 
 type HistoryState = Pick<ProjectState, 'project'>;
@@ -347,6 +351,18 @@ export function createProjectStore(
 
           deleteFixture(levelId, id) {
             editLevel(levelId, (l) => openings.deleteFixture(l, id));
+          },
+
+          setBackground(levelId, background) {
+            const valid = background ? BackgroundSchema.parse(background) : null;
+            editLevel(levelId, (l) => {
+              if (!valid) {
+                const { background: _old, ...rest } = l;
+                void _old;
+                return rest;
+              }
+              return { ...l, background: valid };
+            });
           },
         };
       }),

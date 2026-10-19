@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { readFixture } from '../../tests/helpers';
 import { createProjectStore, isDirty, type ProjectStore } from '../store/projectStore';
-import type { FileGateway, FileInfo, OpenedFile } from './fileGateway';
-import { loadSample, openProject, saveProject, saveProjectAs } from './projectActions';
+import type { FileGateway, FileInfo, ImportedAsset, OpenedFile } from './fileGateway';
+import { loadSample, newProject, openProject, saveProject, saveProjectAs } from './projectActions';
 
 /** Pasarela en memoria que imita a la de Tauri. */
 class FakeGateway implements FileGateway {
@@ -12,6 +12,8 @@ class FakeGateway implements FileGateway {
   nextOpen: string | null = null;
   nextSaveAs: string | null = null;
   fail = false;
+  savedAssets: string[] = [];
+  resets = 0;
 
   async open(): Promise<OpenedFile | null> {
     if (this.fail) throw new Error('disco roto');
@@ -21,17 +23,30 @@ class FakeGateway implements FileGateway {
     this.current = this.nextOpen;
     return { file: this.info(this.current), projectJson: text, assets: ['a.png'] };
   }
-  async save(json: string): Promise<FileInfo | null> {
+  async save(json: string, assets: string[]): Promise<FileInfo | null> {
     if (this.fail) throw new Error('disco lleno');
     if (!this.current) return null;
     this.disk.set(this.current, json);
+    this.savedAssets = assets;
     return this.info(this.current);
   }
-  async saveAs(json: string): Promise<FileInfo | null> {
+  async saveAs(json: string, _name: string, assets: string[]): Promise<FileInfo | null> {
     if (!this.nextSaveAs) return null;
     this.current = this.nextSaveAs;
     this.disk.set(this.current, json);
+    this.savedAssets = assets;
     return this.info(this.current);
+  }
+  async importBackground(): Promise<ImportedAsset | null> {
+    return null;
+  }
+  async readAsset(): Promise<Uint8Array> {
+    return new Uint8Array();
+  }
+  async reset(): Promise<void> {
+    if (this.fail) throw new Error('sin permiso');
+    this.current = null;
+    this.resets++;
   }
   private info(name: string): FileInfo {
     return { fileName: name, isPlanocasa: name.endsWith('.planocasa') };
@@ -140,5 +155,44 @@ describe('ejemplo', () => {
     expect(loadSample(store)).toEqual({ ok: true });
     expect(store.getState().project?.variants).toHaveLength(9);
     expect(store.getState().file).toBeNull();
+  });
+});
+
+describe('nuevo proyecto', () => {
+  it('crea un proyecto vacío sin archivo y olvida el anterior', async () => {
+    gw.nextOpen = 'salon.planocasa';
+    await openProject(store, gw);
+    const r = await newProject(store, gw, new Date(Date.UTC(2026, 9, 19, 10)));
+    expect(r).toEqual({ ok: true });
+    expect(gw.resets).toBe(1);
+    const p = store.getState().project!;
+    expect(p.levels[0]?.walls).toEqual([]);
+    expect(p.createdAt).toBe('2026-10-19T10:00:00.000Z');
+    expect(store.getState().file).toBeNull();
+    expect(isDirty(store.getState())).toBe(false);
+  });
+
+  it('si la pasarela falla, no cambia nada', async () => {
+    loadSample(store);
+    gw.fail = true;
+    const r = await newProject(store, gw);
+    expect(r).toEqual({ ok: false, issues: [{ path: '', message: 'sin permiso' }] });
+    expect(store.getState().project?.id).toBe('salon-madrid');
+  });
+
+  it('al guardar se mandan los assets que usa el proyecto (el fondo)', async () => {
+    await newProject(store, gw);
+    store.getState().setBackground('L0', {
+      asset: 'fondo-1.pdf',
+      page: 1,
+      cmPerPx: 1,
+      offset: { x: 0, y: 0 },
+      rotation: 0,
+      opacity: 0.5,
+    });
+    gw.nextSaveAs = 'casa.planocasa';
+    expect(await saveProject(store, gw)).toEqual({ ok: true });
+    expect(gw.savedAssets).toEqual(['fondo-1.pdf']);
+    expect(gw.disk.get('casa.planocasa')).toContain('"asset": "fondo-1.pdf"');
   });
 });

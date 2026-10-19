@@ -5,27 +5,36 @@
 //! nombre del archivo. Así, aunque se inyectara código en el WebView, no podría leer ni
 //! escribir rutas arbitrarias del disco.
 
-use std::path::PathBuf;
+use std::collections::BTreeSet;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 use serde::Serialize;
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
-use planocasa_core::{self as core, FileKind, PROJECT_EXT};
+use planocasa_core::{self as core, FileKind, SaveAssets, PROJECT_EXT};
+
+use super::assets::StagedAssets;
 
 /// Ruta del proyecto abierto. Solo vive en Rust.
 #[derive(Default)]
 pub struct CurrentFile(Mutex<Option<PathBuf>>);
 
 impl CurrentFile {
-    fn get(&self) -> Option<PathBuf> {
+    pub fn get(&self) -> Option<PathBuf> {
         self.0.lock().map(|g| g.clone()).unwrap_or(None)
     }
 
     fn set(&self, path: PathBuf) {
         if let Ok(mut g) = self.0.lock() {
             *g = Some(path);
+        }
+    }
+
+    pub fn clear(&self) {
+        if let Ok(mut g) = self.0.lock() {
+            *g = None;
         }
     }
 }
@@ -61,11 +70,43 @@ fn err(e: core::Error) -> String {
     e.to_string()
 }
 
+/// Guarda `project_json` en `path` con los assets que el proyecto usa (`keep`):
+/// los importados en memoria y los que ya estaban en `source`. El resto se poda.
+fn save_into(
+    path: &Path,
+    project_json: &str,
+    source: Option<&Path>,
+    keep: Vec<String>,
+    staged: &StagedAssets,
+) -> Result<(), String> {
+    if let Some(bad) = keep.iter().find(|n| !core::is_safe_asset_name(n)) {
+        return Err(err(core::Error::UnsafeAssetName(bad.clone())));
+    }
+    let keep: BTreeSet<String> = keep.into_iter().collect();
+    let pending = staged.snapshot();
+    core::save_with(
+        path,
+        project_json,
+        SaveAssets {
+            from: source,
+            staged: Some(&pending),
+            keep: Some(&keep),
+        },
+    )
+    .map_err(err)?;
+    // Ya están dentro del .planocasa; en un .json no caben, así que se conservan.
+    if FileKind::from_path(path).ok() == Some(FileKind::Planocasa) {
+        staged.clear();
+    }
+    Ok(())
+}
+
 /// Muestra "Abrir" y devuelve el proyecto, o `None` si se cancela.
 #[tauri::command]
 pub async fn open_project(
     app: AppHandle,
     current: State<'_, CurrentFile>,
+    staged: State<'_, StagedAssets>,
 ) -> Result<Option<OpenedProjectDto>, String> {
     // Los comandos async no corren en el hilo principal: el diálogo bloqueante es seguro aquí.
     let Some(picked) = app
@@ -83,6 +124,7 @@ pub async fn open_project(
 
     let opened = core::open(&path).map_err(err)?;
     current.set(path.clone());
+    staged.clear();
     Ok(Some(OpenedProjectDto {
         file: file_info(&path),
         project_json: opened.project_json,
@@ -90,17 +132,19 @@ pub async fn open_project(
     }))
 }
 
-/// Guarda en el archivo actual. Devuelve `None` si aún no hay archivo (el front
-/// debe llamar entonces a `save_project_as`).
+/// Guarda en el archivo actual (`assets` = los que usa el proyecto). Devuelve `None`
+/// si aún no hay archivo (el front debe llamar entonces a `save_project_as`).
 #[tauri::command]
 pub async fn save_project(
     project_json: String,
+    assets: Vec<String>,
     current: State<'_, CurrentFile>,
+    staged: State<'_, StagedAssets>,
 ) -> Result<Option<FileInfo>, String> {
     let Some(path) = current.get() else {
         return Ok(None);
     };
-    core::save(&path, &project_json, Some(&path)).map_err(err)?;
+    save_into(&path, &project_json, Some(&path), assets, &staged)?;
     Ok(Some(file_info(&path)))
 }
 
@@ -110,7 +154,9 @@ pub async fn save_project_as(
     app: AppHandle,
     project_json: String,
     suggested_name: String,
+    assets: Vec<String>,
     current: State<'_, CurrentFile>,
+    staged: State<'_, StagedAssets>,
 ) -> Result<Option<FileInfo>, String> {
     let Some(picked) = app
         .dialog()
@@ -131,7 +177,7 @@ pub async fn save_project_as(
     }
 
     let source = current.get();
-    core::save(&path, &project_json, source.as_deref()).map_err(err)?;
+    save_into(&path, &project_json, source.as_deref(), assets, &staged)?;
     current.set(path.clone());
     Ok(Some(file_info(&path)))
 }

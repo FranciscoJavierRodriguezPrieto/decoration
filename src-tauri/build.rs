@@ -7,6 +7,9 @@ fn main() {
             "save_project",
             "save_project_as",
             "current_file",
+            "import_background",
+            "read_asset",
+            "reset_session",
         ]),
     ))
     .expect("fallo al ejecutar tauri-build");
